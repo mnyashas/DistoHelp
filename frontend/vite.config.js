@@ -16,6 +16,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: true,                    // serve on LAN + tunnels
+    allowedHosts: true,            // allow cloudflare tunnel hostnames
     proxy: {
       '/api': 'http://localhost:8000',
       '/ws': { target: 'ws://localhost:8000', ws: true },
