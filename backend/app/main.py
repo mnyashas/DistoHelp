@@ -8,13 +8,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import api, compat, config, db, seed, ws
+from . import api, compat, config, db, seed, ws, fhir_client
 from .ws import router as ws_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
+    fhir_client.WORKER.start()
     seed.seed(post_to_hapi=True)
     ws.manager._loop = asyncio.get_event_loop()
 

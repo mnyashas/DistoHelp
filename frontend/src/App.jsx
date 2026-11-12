@@ -10,6 +10,8 @@ import { HistoryPage } from './patients/MonitoringHistory.jsx';
 import VitalSignsPage from './vitals/VitalSignsPage.jsx';
 import RiskAssessmentPage from './risk-assessment/RiskAssessmentPage.jsx';
 import { EnquiriesPage } from './enquiries/EnquirySection.jsx';
+import Live from './pages/Live.jsx';
+import Watch from './pages/Watch.jsx';
 import { Spinner } from './components/ui.jsx';
 
 function RequireAuth({ children }) {
@@ -22,8 +24,10 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/watch" element={<Watch />} />   {/* kiosk companion UI — no chrome */}
       <Route element={<RequireAuth><Layout /></RequireAuth>}>
         <Route index element={<Dashboard />} />
+        <Route path="live" element={<Live />} />
         <Route path="patients" element={<PatientsPage />} />
         <Route path="patients/:id" element={<PatientProfile />} />
         <Route path="vitals" element={<VitalSignsPage />} />

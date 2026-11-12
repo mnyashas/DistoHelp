@@ -1,51 +1,54 @@
-"""Thin client for the HAPI FHIR R4 server. Everything FHIR-shaped goes here.
-All functions are best-effort: if HAPI is down the app keeps running on the
-local read-model and surfaces the outage via health_check()."""
+"""FHIR client for the HAPI R4 server + an async write-behind batch worker.
+
+Reads/creates used by escalation stay synchronous (need immediate IDs).
+Observation ingestion is fire-and-forget: observations queue into a background
+thread and are flushed to HAPI in transactions (bundles) every flush cycle, so
+the monitoring loop never blocks on FHIR server latency. Health is cached.
+"""
+import queue
+import threading
+import time
+
 import httpx
 
-from . import config
+from . import config, db
 
-TIMEOUT = 10.0
+TIMEOUT = 5.0
+_health_lock = threading.Lock()
+_health = {"t": 0.0, "ok": False}
+HEALTH_TTL = 30.0
 
-def health_check() -> bool:
+
+def _check_health() -> bool:
     try:
         r = httpx.get(f"{config.HAPI_FHIR_URL.rstrip('/')}/metadata", timeout=3.0)
         return r.status_code == 200
     except Exception:
         return False
 
-def create_patient(bundle_entry: dict) -> str | None:
-    """Create a Patient resource; bundle_entry is the Patient resource dict."""
+
+def health_check() -> bool:
+    with _health_lock:
+        if time.monotonic() - _health["t"] > HEALTH_TTL:
+            _health["t"] = time.monotonic()
+            _health["ok"] = _check_health()
+        return _health["ok"]
+
+
+def create_resource(resource_type: str, resource: dict, timeout: float = TIMEOUT) -> str | None:
+    if not health_check():
+        return None
     try:
-        r = httpx.post(f"{config.HAPI_FHIR_URL.rstrip('/')}/Patient",
-                       json=bundle_entry, timeout=TIMEOUT)
+        r = httpx.post(f"{config.HAPI_FHIR_URL.rstrip('/')}/{resource_type}",
+                       json=resource, timeout=timeout)
         if r.status_code in (200, 201):
             return r.json().get("id")
     except Exception:
         pass
     return None
 
-def create_resource(resource_type: str, resource: dict) -> str | None:
-    import time
-    for attempt in range(2):  # one retry: public/sandbox servers can be flaky
-        try:
-            r = httpx.post(f"{config.HAPI_FHIR_URL.rstrip('/')}/{resource_type}",
-                           json=resource, timeout=TIMEOUT)
-            if r.status_code in (200, 201):
-                return r.json().get("id")
-        except Exception:
-            pass
-        time.sleep(0.5)
-    return None
-
-def create_observation(patient_fhir_id: str, observation: dict) -> str | None:
-    obs = dict(observation)
-    if patient_fhir_id and "subject" not in obs:
-        obs["subject"] = {"reference": f"Patient/{patient_fhir_id}"}
-    return create_resource("Observation", obs)
 
 def create_flag(patient_fhir_id: str, title: str, detail: str, level: str) -> str | None:
-    """FHIR Flag resource for escalation (registered on the HAPI server)."""
     severity = {"watch": "routine", "review": "urgent", "urgent": "critical"}.get(level, "urgent")
     flag = {
         "resourceType": "Flag",
@@ -57,16 +60,13 @@ def create_flag(patient_fhir_id: str, title: str, detail: str, level: str) -> st
         }]}],
         "code": {"text": title},
         "subject": {"reference": f"Patient/{patient_fhir_id}"},
-        "extension": [{
-            "url": "http://distohelp.local/severity",
-            "valueCode": severity,
-        }],
+        "extension": [{"url": "http://distohelp.local/severity", "valueCode": severity}],
         "period": {"start": db_now()},
     }
     return create_resource("Flag", flag)
 
+
 def create_communication_request(patient_fhir_id: str, message: str, level: str) -> str | None:
-    """FHIR CommunicationRequest — instructs the care team to be notified."""
     priority = {"watch": "routine", "review": "asap", "urgent": "stat"}.get(level, "asap")
     cr = {
         "resourceType": "CommunicationRequest",
@@ -79,7 +79,10 @@ def create_communication_request(patient_fhir_id: str, message: str, level: str)
     }
     return create_resource("CommunicationRequest", cr)
 
+
 def search_observations(patient_fhir_id: str, loinc: str, count: int = 100) -> list[dict]:
+    if not health_check():
+        return []
     try:
         r = httpx.get(
             f"{config.HAPI_FHIR_URL.rstrip('/')}/Observation",
@@ -97,6 +100,70 @@ def search_observations(patient_fhir_id: str, loinc: str, count: int = 100) -> l
         pass
     return []
 
+
 def db_now() -> str:
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return db.now_iso()
+
+
+class _HapiWorker:
+    """Batches observations into FHIR transaction bundles, off the hot path."""
+
+    def __init__(self) -> None:
+        self.q: queue.Queue = queue.Queue(maxsize=2000)
+        self._thread = threading.Thread(target=self._run, daemon=True, name="hapi-flush")
+        self._started = False
+        self.dropped = 0
+        self.flushed = 0
+
+    def start(self) -> None:
+        if not self._started:
+            self._started = True
+            self._thread.start()
+
+    def submit(self, observation: dict) -> bool:
+        try:
+            self.q.put_nowait(observation)
+            return True
+        except queue.Full:
+            self.dropped += 1
+            return False
+
+    def _run(self) -> None:
+        buf: list[dict] = []
+        while True:
+            try:
+                item = self.q.get(timeout=1.0)
+                buf.append(item)
+            except queue.Empty:
+                pass
+            if buf and (len(buf) >= 25 or (self.q.empty() and len(buf) >= 1)):
+                self._flush(buf)
+                buf = []
+
+    def _flush(self, observations: list[dict]) -> None:
+        if not health_check():
+            self.dropped += len(observations)   # nothing to write to; skip quietly
+            return
+        bundle = {
+            "resourceType": "Bundle",
+            "type": "transaction",
+            "entry": [
+                {"request": {"method": "POST", "url": "Observation"}, "resource": obs}
+                for obs in observations
+            ],
+        }
+        try:
+            r = httpx.post(f"{config.HAPI_FHIR_URL.rstrip('/')}",
+                           json=bundle, timeout=TIMEOUT)
+            if r.status_code in (200, 201):
+                self.flushed += len(observations)
+                return
+            # fall back to individual POSTs if batch rejected
+            for obs in observations:
+                create_resource("Observation", obs)
+            self.flushed += len(observations)
+        except Exception:
+            self.dropped += len(observations)
+
+
+WORKER = _HapiWorker()

@@ -47,8 +47,10 @@ def meta():
 
 @router.get("/hapi/status")
 def hapi_status():
-    ok = fhir_client.health_check()
-    return {"hapi_fhir_reachable": ok, "hapi_fhir_url": config.HAPI_FHIR_URL}
+    return {"hapi_fhir_reachable": fhir_client.health_check(), "hapi_fhir_url": config.HAPI_FHIR_URL,
+            "observations_flushed": fhir_client.WORKER.flushed,
+            "observations_dropped": fhir_client.WORKER.dropped,
+            "write_queue_depth": fhir_client.WORKER.q.qsize()}
 
 
 # ---------- dashboard ----------

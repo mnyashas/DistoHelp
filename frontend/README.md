@@ -32,9 +32,23 @@ configuration is needed. `npm run build` produces a static bundle in `dist/` (gi
 
 ## Screens
 
-Dashboard · Patients (search/register/edit/profile) · Vital Signs (manual/simulated/ESP32 input,
-live NEWS2 preview, save) · Sensor Monitoring · Risk Assessment · Monitoring History (charts + CSV
-export) · Patient Enquiries (staff symptom intake) · Settings.
+Dashboard · **Live Monitoring** (`/live`, WS-driven telemetry grid, alert stream with ack/resolve,
+demo streams, BLE band connect) · Patients (search/register/edit/profile) · Vital Signs (manual/
+simulated/ESP32 input, live NEWS2 preview) · Sensor Monitoring · Risk Assessment · Monitoring
+History · Patient Enquiries · Settings.
+
+## Watch companion
+
+Open `http://<lan-ip>:5173/watch?p=p02` on any phone/watch browser on the same network — no login.
+Full-screen wrist UI: huge HR with NEWS2 arc gauge, SpO₂/RR/Temp, status banner, haptic buzz
+(`navigator.vibrate`) on alerts, red flash on URGENT, reconnects automatically. WebSocket via the
+Vite proxy (`/ws` → `:8000`).
+
+## BLE wearable (Chrome/Edge on Android or PC only)
+
+Live Monitoring → **Connect BLE band**. Reads standard Heart Rate Service (0x180D) from any
+BLE chest strap/band and forwards readings to `POST /api/sensors/readings` (header
+`x-device-key: demo-esp32-key`). Safari/iOS do not support Web Bluetooth.
 
 ## Demo storyline (matches PS-03)
 

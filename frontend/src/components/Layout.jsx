@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, HeartPulse, Radio, ShieldAlert,
-  LineChart, ClipboardList, Settings, LogOut,
+  LineChart, ClipboardList, Settings, LogOut, AudioLines,
 } from 'lucide-react';
 import { useAuth } from '../services/AuthContext.jsx';
 import { Brand } from './ui.jsx';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/live', label: 'Live Monitoring', icon: AudioLines },
   { to: '/patients', label: 'Patients', icon: Users },
   { to: '/vitals', label: 'Vital Signs', icon: HeartPulse },
   { to: '/sensors', label: 'Sensor Monitoring', icon: Radio },

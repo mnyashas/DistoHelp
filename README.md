@@ -66,15 +66,17 @@ through the Vite proxy (`/api` → `:8000`) via the compatibility layer in `back
 PS-03 contract endpoints remain available alongside it. Frontend ↔ backend link verified:
 HTML served at :5173, proxied `/api/patients` returns the 5 seeded patients.
 
-## Demo script (5 minutes)
+## Demo script (6 minutes)
 
-1. `GET /api/dashboard` — 5 patients, disclaimer present.
-2. `POST /api/simulator/p02/start {"scenario":"slow_deterioration","rate_per_minute":60}` — watch vitals on WS `/ws/live`.
-3. Open patient p02 → score climbs, Watch→Review alert fires with full explanation.
+1. Sign in at http://localhost:5173 → Dashboard: 5 patients, p02 flagged High Risk (NEWS2 7).
+2. **Live Monitoring** (`/live`) → **Start demo streams**: p02 drifts into deterioration on the
+   telemetry grid, artifacts get suppressed, alert banner + chime fire, ack/resolve from the stream.
+3. Open **watch companion** (`/watch?p=p02`) on a phone on the same LAN — wrist UI streams live
+   vitals over WebSocket; URGENT flashes + buzzes.
 4. `POST /api/simulator/p04/start {"scenario":"probe_removal"}` → grey device badge, **no** red alert.
-5. `POST /api/alerts/{id}/ack` → resolve. `POST /api/escalations {"alert_id": …}` → EN/HI/KN message + FHIR Flag/CommunicationRequest.
+5. `POST /api/escalations {"alert_id": …}` → EN/HI/KN message + FHIR Flag/CommunicationRequest.
 6. `POST /api/scenarios/evaluate` → performance report: detection lead time & alerts/patient-day vs naive thresholds.
-7. `POST /api/bidmc/replay {"record_id":"demo","patient_id":"p03","speed":60}` → real BIDMC waveform replayed.
+7. `GET /api/hapi/status` → shows async HAPI worker stats (`observations_flushed`, queue depth).
 
 ## Evaluation criteria coverage
 

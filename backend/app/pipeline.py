@@ -97,17 +97,13 @@ def ingest_vital(patient_id: str, loinc: str, value: float | None, source: str) 
          source, artifact, db.now_iso()),
     )
 
-    # Forward to HAPI FHIR (best effort; local read-model is authoritative for scores)
-    fhir_ref = None
-    fhir_err = None
-    try:
-        fhir_pid = _fhir_patient_id(patient_id)
-        obs_json = build_fhir_observation(fhir_pid or patient_id, loinc, value)
-        fhir_id = fhir_client.create_observation(fhir_pid, obs_json)
-        fhir_ref = f"Observation/{fhir_id}" if fhir_id else None
-        fhir_err = None if fhir_id else "HAPI FHIR unreachable or returned an error"
-    except Exception as e:  # never let HAPI outage block monitoring
-        fhir_err = str(e)
+    # Forward to HAPI FHIR asynchronously (transaction bundles, off the hot path)
+    fhir_pid = _fhir_patient_id(patient_id)
+    obs_json = build_fhir_observation(fhir_pid or patient_id, loinc, value)
+    queued = fhir_client.WORKER.submit(obs_json)
+    fhir_ref = None                      # assigned by HAPI asynchronously
+    fhir_err = None if queued else "HAPI queue full; observations retained in SQLite only"
+    hapi_ok = fhir_client.health_check()
 
     result = {
         "patient_id": patient_id,
@@ -117,7 +113,7 @@ def ingest_vital(patient_id: str, loinc: str, value: float | None, source: str) 
         "unit": constants.LOINC[loinc]["unit"],
         "artifact": artifact,
         "fhir_ref": fhir_ref,
-        "hapi_ok": fhir_err is None,
+        "hapi_ok": hapi_ok and fhir_err is None,
     }
     if artifact:
         result["alert"] = None
