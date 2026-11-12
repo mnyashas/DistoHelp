@@ -387,6 +387,26 @@ def create_patient(body: dict):
     return patient_detail(pid)
 
 
+SEED_IDS = {"p01", "p02", "p03", "p04", "p05"}
+
+
+@router.delete("/patients/{patient_id}")
+def delete_patient(patient_id: str):
+    """Delete a USER-ADDED patient and all derived data. The seeded cohort
+    (p01–p05, Synthea-generated) cannot be removed this way."""
+    if patient_id in SEED_IDS:
+        raise HTTPException(403, "The seeded discharge cohort (p01–p05) cannot be deleted")
+    row = db.query_one("SELECT id FROM patients WHERE id=?", (patient_id,))
+    if not row:
+        raise HTTPException(404, "patient not found")
+    for table in ("observations", "scores", "alerts", "device_events", "checkins",
+                  "monitoring_records", "enquiries", "sensor_readings",
+                  "notifications", "scenario_runs"):
+        db.execute(f"DELETE FROM {table} WHERE patient_id=?", (patient_id,))
+    db.execute("DELETE FROM patients WHERE id=?", (patient_id,))
+    return {"ok": True, "deleted": patient_id}
+
+
 @router.put("/patients/{patient_id}")
 def update_patient(patient_id: str, body: dict):
     row = db.query_one("SELECT * FROM patients WHERE id=?", (patient_id,))

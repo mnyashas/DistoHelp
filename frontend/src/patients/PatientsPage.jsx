@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, UserPlus, Phone, ChevronRight } from 'lucide-react';
+import { Search, UserPlus, Phone, ChevronRight, Trash2 } from 'lucide-react';
 import { api } from '../services/api.js';
 import { Modal, RiskBadge, Spinner } from '../components/ui.jsx';
 import { initials } from '../services/format.js';
 import PatientForm from './PatientForm.jsx';
+
+const isUserAdded = (id) => !/^p0[1-5]$/.test(id);   // seeded discharge cohort is protected
 
 export default function PatientsPage() {
   const [params] = useSearchParams();
@@ -16,6 +18,16 @@ export default function PatientsPage() {
     const t = setTimeout(() => api(`/patients?q=${encodeURIComponent(q)}`).then(setList), 200);
     return () => clearTimeout(t);
   }, [q, adding]);
+
+  const remove = async (p) => {
+    if (!window.confirm(`Delete ${p.fullName} (${p.id}) and all their records? This cannot be undone.`)) return;
+    try {
+      await api(`/patients/${p.id}`, { method: 'DELETE' });
+      setList((l) => (l || []).filter((x) => x.id !== p.id));
+    } catch (e) {
+      alert(e.message || 'Delete failed');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -49,7 +61,18 @@ export default function PatientsPage() {
                     <p className="text-xs text-slate-500">{p.id} · {p.age} yrs · {p.gender}</p>
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-slate-400" />
+                <div className="flex items-center gap-1">
+                  {isUserAdded(p.id) && (
+                    <button
+                      aria-label="Delete patient"
+                      title="Delete this user-added patient"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); remove(p); }}
+                      className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-500">
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                  <ChevronRight size={18} className="text-slate-400" />
+                </div>
               </div>
               <p className="mt-3 flex items-center gap-2 text-sm text-slate-600"><Phone size={14} /> {p.phone}</p>
               <div className="mt-3 flex flex-wrap gap-1.5">

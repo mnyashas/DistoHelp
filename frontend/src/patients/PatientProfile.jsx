@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Pencil, Phone, MapPin } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Pencil, Phone, MapPin, Trash2 } from 'lucide-react';
 import { api } from '../services/api.js';
 import { Modal, RiskBadge, Spinner } from '../components/ui.jsx';
 import { ScoreCard } from '../risk-assessment/ScoreBreakdown.jsx';
@@ -12,6 +12,8 @@ import { fmt, initials } from '../services/format.js';
 
 export default function PatientProfile() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const isUserAdded = !/^p0[1-5]$/.test(id || '');   // seeded cohort cannot be deleted
   const [p, setP] = useState(null);
   const [editing, setEditing] = useState(false);
   const [err, setErr] = useState('');
@@ -46,6 +48,17 @@ export default function PatientProfile() {
         <div className="flex items-center gap-3">
           {latest && <RiskBadge level={latest.news2.risk.level} />}
           <button className="btn-ghost" onClick={() => setEditing(true)}><Pencil size={16} /> Edit</button>
+          {isUserAdded && (
+            <button
+              className="btn-ghost !border-red-200 !text-red-600 hover:!bg-red-50"
+              onClick={async () => {
+                if (!window.confirm(`Delete ${p.fullName} (${p.id}) and all their records? This cannot be undone.`)) return;
+                try { await api(`/patients/${p.id}`, { method: 'DELETE' }); navigate('/patients'); }
+                catch (e) { setErr(e.message || 'Delete failed'); }
+              }}>
+              <Trash2 size={16} /> Delete
+            </button>
+          )}
         </div>
       </section>
 
