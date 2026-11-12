@@ -110,6 +110,7 @@ export function EmergencyContacts({ patientId, patientName }) {
   const [form, setForm] = useState({ name: '', relation: 'spouse', phone: '', via: 'auto' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const deliveryNote = 'WhatsApp via Twilio · SMS via MSG91 · no provider configured → logged in-app';
 
   const load = () => api(`/emergency-contacts?patient_id=${encodeURIComponent(patientId)}`)
     .then((d) => setContacts(d.contacts || []))
@@ -134,9 +135,8 @@ export function EmergencyContacts({ patientId, patientName }) {
     <section className="card">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-bold"><PhoneCall size={18} className="text-red-500" /> Emergency contacts — {patientName || patientId}</h2>
-        <span className="text-[10px] uppercase tracking-widest text-gray-400">via MSG91 · Twilio WhatsApp · Textbelt · Telegram</span>
       </div>
-      <p className="mt-1 text-xs text-gray-500">Real outbound SMS/WhatsApp requires the backend started with a provider configured (e.g. <code className="rounded bg-gray-100 px-1">MSG91_AUTH_KEY=…</code> or <code className="rounded bg-gray-100 px-1">TWILIO_ACCOUNT_SID=… TWILIO_AUTH_TOKEN=…</code>). With no provider, sends are logged to the delivery screen — nothing leaves your machine.</p>
+      <p className="mt-1 text-sm text-gray-500">{deliveryNote}</p>
 
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
 
@@ -146,7 +146,7 @@ export function EmergencyContacts({ patientId, patientName }) {
           {contacts === null ? (
             <p className="p-4 text-sm text-gray-400">Loading…</p>
           ) : contacts.length === 0 ? (
-            <p className="p-4 text-sm text-gray-500">No contacts yet — add the patient's emergency numbers so a panic press reaches them.</p>
+            <p className="p-4 text-sm text-gray-500">No contacts yet.</p>
           ) : (
             <ul className="divide-y divide-gray-100">
               {contacts.map((c) => (
@@ -178,7 +178,7 @@ export function EmergencyContacts({ patientId, patientName }) {
             </select>
             <button className="btn-primary !from-red-500 !to-rose-500 !shadow-red-200" disabled={busy} type="submit"><Plus size={16} /> Add</button>
           </div>
-          <p className="text-[10px] text-gray-400">Use full international format (+91…) for delivery. WhatsApp delivery: pick <b>twilio_whatsapp</b> and send the sandbox's <b>join &lt;code&gt;</b> once from your WhatsApp before the first test. SMS delivery: pick <b>msg91</b> (India).</p>
+          <p className="text-[10px] text-gray-400">WhatsApp: <b>twilio_whatsapp</b> (sandbox join first). SMS: <b>msg91</b> (India).</p>
         </form>
       </div>
     </section>

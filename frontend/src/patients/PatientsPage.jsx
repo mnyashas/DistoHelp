@@ -34,7 +34,6 @@ export default function PatientsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Patients</h1>
-          <p className="text-sm text-gray-500">{list?.length ?? 0} registered profiles</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <div className="relative">
@@ -75,11 +74,9 @@ export default function PatientsPage() {
                 </div>
               </div>
               <p className="mt-3 flex items-center gap-2 text-sm text-gray-600"><Phone size={14} /> {p.phone}</p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {p.conditions.map((c) => (
-                  <span key={c} className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs text-brand-700">{c}</span>
-                ))}
-              </div>
+              {p.primaryCondition && (
+                <p className="mt-2"><span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">{p.primaryCondition}</span></p>
+              )}
               <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
                 {p.latest ? (
                   <>

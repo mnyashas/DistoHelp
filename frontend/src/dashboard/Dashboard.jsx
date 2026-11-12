@@ -35,8 +35,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Clinical Dashboard</h1>
-          <p className="text-sm text-gray-500">Registered patients and early warning status</p>
+          <h1 className="text-2xl font-bold">Overview</h1>
         </div>
         <div className="flex flex-wrap gap-3">
           <form onSubmit={search} className="relative">

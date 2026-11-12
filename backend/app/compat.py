@@ -6,6 +6,7 @@ the DIstoHelp PS-03 core (pipeline, artifact filter, FHIR/HAPI storage,
 notifications). Demo OTP is DEMO_OTP (default 123456); tokens are random hex
 stored in SQLite. NOT real authentication — demo build only.
 """
+import re
 import secrets
 import uuid
 from datetime import datetime, timezone
@@ -139,6 +140,46 @@ def _pflags(patient_id: str) -> dict:
     return db.loads(row["risk_flags"]) if row else {}
 
 
+_DISCHARGE_STOP = {
+    "disorder", "disease", "syndrome", "history", "chronic", "acute", "problem",
+    "injury", "type", "infection", "finding", "known", "recent", "past",
+}
+
+def _primary_condition(patient: dict) -> str:
+    """The single discharge-relevant condition (not everything from a lifetime).
+    Rank conditions by word overlap with the discharge note; fall back to a
+    clinical priority scan, then to the first documented condition."""
+    conditions = db.loads(patient.get("conditions") or "[]") or []
+    trivial = {"none", "unknown", "n/a", "not specified", "", "-"}
+    names = [c.get("display", "").strip() for c in conditions
+             if c.get("display") and c.get("display", "").strip().lower() not in trivial]
+    if not names:
+        return ""
+    raw_note = patient.get("medical_history") or ""
+    # import_synthea.py writes "Primary condition: <name>" into the discharge note — honor it verbatim
+    m = re.search(r"primary condition\s*:\s*([^.\n]+)", raw_note, re.I)
+    if m:
+        cand = m.group(1).strip()
+        if cand.lower() not in trivial:
+            return cand
+    note = raw_note.lower()
+    if note:
+        best, best_score = None, 0
+        for n in names:
+            toks = {t for t in re.findall(r"[a-z][a-z0-9]{3,}", n.lower()) if t not in _DISCHARGE_STOP}
+            score = sum(1 for t in toks if t in note)
+            if score > best_score:
+                best, best_score = n, score
+        if best and best_score >= 1:
+            return best
+    for key in ("asthma", "heart failure", "failure", "respiratory", "copd", "chronic obstructive",
+                "diabetes", "hypertension", "cancer", "fibrillation", "stroke", "append"):
+        for n in names:
+            if key in n.lower():
+                return n
+    return names[0]
+
+
 def _patient_summary(patient: dict) -> dict:
     latest = db.query_one(
         "SELECT * FROM monitoring_records WHERE patient_id=? ORDER BY id DESC LIMIT 1",
@@ -158,6 +199,7 @@ def _patient_summary(patient: dict) -> dict:
         "phone": patient.get("phone") or "",
         "address": patient.get("address") or "",
         "conditions": [c.get("display", "") for c in conditions],
+        "primaryCondition": _primary_condition(patient),
         "risk_flags": db.loads(patient.get("risk_flags") or "{}"),
         "latest": latest_risk,
     }
@@ -239,6 +281,7 @@ def patient_me(authorization: Optional[str] = Header(None)):
             "gender": (patient_row["gender"] or "").capitalize(),
             "phone": patient_row["phone"],
             "conditions": [c.get("display") for c in (db.loads(patient_row["conditions"]) or [])],
+            "primaryCondition": _primary_condition(patient_row),
             "medications": db.loads(patient_row["medications"]) or [],
             "risk_flags": db.loads(patient_row["risk_flags"]) or {},
             "medicalHistory": patient_row.get("medical_history") or "",

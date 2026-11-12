@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { ClipboardList, Send } from 'lucide-react';
 import { api } from '../services/api.js';
 import { fmt } from '../services/format.js';
@@ -82,28 +81,3 @@ export default function EnquirySection({ patient, onSaved }) {
   );
 }
 
-export function EnquiriesPage() {
-  const [list, setList] = useState(null);
-  useEffect(() => { api('/patients/enquiries').then(setList); }, []);
-
-  if (!list) return <p className="text-sm text-gray-500">Loading…</p>;
-
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Patient Enquiries</h1>
-      {list.length === 0 && <div className="card text-sm text-gray-500">No enquiries yet.</div>}
-      <div className="grid gap-4 md:grid-cols-2">
-        {list.map((e) => (
-          <Link key={e.id} to={`/patients/${e.patientId}`} className="card transition hover:shadow-xl">
-            <div className="flex justify-between gap-2">
-              <p className="font-semibold">{e.patientName}</p>
-              <span className="text-xs text-gray-500">{fmt(e.createdAt)}</span>
-            </div>
-            <p className="mt-2 text-sm">{e.mainComplaint}</p>
-            {e.staffRemarks && <p className="mt-2 text-xs text-gray-500">Remarks: {e.staffRemarks}</p>}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}

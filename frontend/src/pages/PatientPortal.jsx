@@ -162,14 +162,10 @@ function Report({ token, onLogout }) {
               <p className="text-xs text-gray-500">{p.id} · age {p.age} · {p.gender}</p>
               <h1 className="text-3xl font-extrabold">{p.fullName}</h1>
               <div className="mt-2 flex flex-wrap gap-2">
-                {p.conditions.map((c) => <span key={c} className="rounded-full bg-brand-50 px-2.5 py-1 text-xs text-brand-700">{c}</span>)}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-500">
-                {p.medications.map((m) => (
-                  <span key={m.display} className={`rounded-full px-2.5 py-1 ${m.beta_blocker ? 'bg-amber-100 font-semibold text-amber-800' : 'bg-gray-100'}`}>
-                    ⚕ {m.display.split('  ')[0]}{m.beta_blocker ? ' · beta-blocker' : ''}
-                  </span>
-                ))}
+                {p.primaryCondition && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">{p.primaryCondition}</span>}
+                {p.medications?.some((m) => m.beta_blocker) && (
+                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">on beta-blocker</span>
+                )}
               </div>
             </div>
             {risk && (

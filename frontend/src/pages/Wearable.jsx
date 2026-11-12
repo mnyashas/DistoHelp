@@ -254,7 +254,7 @@ export default function Wearable() {
               <b>Streaming to {selected?.fullName}</b> · {sent} readings sent{lastSentAt ? ` · last ${lastSentAt.toLocaleTimeString()}` : ''}
             </p>
             <div className="flex flex-wrap gap-2">
-              <Link to="/live" className="btn-ghost bg-white text-xs">Live Monitoring →</Link>
+              <Link to="/patients" className="btn-ghost bg-white text-xs">Patients →</Link>
               <Link to={`/watch?p=${patientId}`} className="btn-ghost bg-white text-xs">Wrist view →</Link>
             </div>
           </div>

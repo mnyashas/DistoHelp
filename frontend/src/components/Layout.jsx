@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, HeartPulse, Radio, ShieldAlert,
-  LineChart, ClipboardList, Settings, LogOut, AudioLines, Activity, Watch,
+  LayoutDashboard, Users, ShieldAlert, Settings, LogOut, Watch, Activity,
 } from 'lucide-react';
 import { useAuth } from '../services/AuthContext.jsx';
 
@@ -12,7 +11,6 @@ const SECTIONS = [
     label: 'Overview',
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-      { to: '/live', label: 'Live Monitoring', icon: AudioLines },
       { to: '/wearable', label: 'Wearable Mode', icon: Watch },
     ],
   },
@@ -20,11 +18,7 @@ const SECTIONS = [
     label: 'Patient Care',
     items: [
       { to: '/patients', label: 'Patients', icon: Users },
-      { to: '/vitals', label: 'Vital Signs', icon: HeartPulse },
-      { to: '/sensors', label: 'Sensor Monitoring', icon: Radio },
       { to: '/risk', label: 'Risk Assessment', icon: ShieldAlert },
-      { to: '/history', label: 'Monitoring History', icon: LineChart },
-      { to: '/enquiries', label: 'Patient Enquiries', icon: ClipboardList },
     ],
   },
   {
@@ -98,9 +92,6 @@ export default function Layout() {
                             className={isActive ? 'text-brand-500' : 'text-gray-400 group-hover:text-gray-600'}
                           />
                           <span className="truncate">{label}</span>
-                          {to === '/live' && (
-                            <span className="ms-auto inline-flex h-2.5 w-2.5 rounded-full bg-success-500 animate-pulse" style={{ backgroundColor: '#12b76a' }} />
-                          )}
                         </>
                       )}
                     </NavLink>
@@ -114,9 +105,8 @@ export default function Layout() {
         {/* live status + user card */}
         <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-3">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-            <Activity size={13} className="text-success-600" style={{ color: '#039855' }} /> Post-discharge watch
+            <Activity size={13} style={{ color: '#039855' }} /> Monitoring live
           </div>
-          <p className="mt-1 text-xs text-gray-500">Vitals stream from wearables · NEWS2 scored by the backend</p>
           <div className="mt-3 flex items-center gap-3 border-t border-gray-200 pt-3">
             <div className="grid h-10 w-10 place-items-center rounded-full bg-brand-500 text-sm font-bold text-white">
               {initials}

@@ -1,9 +1,6 @@
-import { useEffect, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Download } from 'lucide-react';
-import { api } from '../services/api.js';
 import { RiskBadge } from '../components/ui.jsx';
-import PatientSelect from '../components/PatientSelect.jsx';
 import { downloadCSV, fmt } from '../services/format.js';
 
 const short = (iso) =>
@@ -102,23 +99,3 @@ export default function MonitoringHistory({ records = [], patientName = 'patient
   );
 }
 
-export function HistoryPage() {
-  const [id, setId] = useState('');
-  const [patient, setPatient] = useState(null);
-
-  useEffect(() => {
-    setPatient(null);
-    if (id) api(`/patients/${id}`).then(setPatient);
-  }, [id]);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Monitoring History</h1>
-        <PatientSelect value={id} onChange={setId} />
-      </div>
-      {!id && <div className="card text-sm text-gray-500">Select a patient to view their history.</div>}
-      {patient && <MonitoringHistory records={patient.records} patientName={patient.fullName} />}
-    </div>
-  );
-}
