@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { HeartPulse, Wifi, WifiOff } from 'lucide-react';
 
 const RISK = {
@@ -86,6 +86,11 @@ export default function Watch() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-black text-white select-none" style={{ fontFamily: 'ui-rounded, system-ui' }}>
+      {/* back to dashboard — subtle, top-right (appears on hover) */}
+      <Link to="/" className="absolute right-3 top-3 z-10 rounded-full border border-white/15 bg-black/40 px-3 py-1.5 text-[11px] font-semibold text-white/60 opacity-40 transition hover:opacity-100">
+        ← Dashboard
+      </Link>
+
       {/* ambient glow */}
       <div className="pointer-events-none absolute inset-0 transition-all duration-700"
            style={{ background: `radial-gradient(circle at 50% 45%, ${risk.glow} 0%, transparent 65%)` }} />
