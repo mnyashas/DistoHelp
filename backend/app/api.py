@@ -382,8 +382,8 @@ def list_contacts(patient_id: Optional[str] = None):
 @router.post("/emergency-contacts", status_code=201)
 def add_contact(c: ContactIn):
     _patient_or_404(c.patient_id)
-    if c.via not in ("auto", "textbelt", "telegram", "msg91", "twilio"):
-        raise HTTPException(422, "via must be one of auto|textbelt|telegram|msg91|twilio")
+    if c.via not in ("auto", "textbelt", "telegram", "msg91", "twilio", "twilio_whatsapp"):
+        raise HTTPException(422, "via must be one of auto|textbelt|telegram|msg91|twilio|twilio_whatsapp")
     cur = db.execute(
         "INSERT INTO emergency_contacts(patient_id,name,relation,phone,via,active,created_at) VALUES(?,?,?,?,?,1,?)",
         (c.patient_id, c.name.strip(), c.relation.strip(), c.phone.strip(), c.via, db.now_iso()),
@@ -453,8 +453,9 @@ def panic(p: PanicIn):
         "patient": {"id": patient["id"], "name": patient["name"]},
         "dispatched": len(results),
         "results": results,
-        "provider_note": ("Set NOTIFY_PROVIDER / TEXTBELT_KEY / MSG91_AUTH_KEY / TELEGRAM_BOT_TOKEN "
-                          "to control delivery; with no provider configured, calls are logged to the screen."),
+        "provider_note": ("Set NOTIFY_PROVIDER / MSG91_AUTH_KEY / TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN "
+                          "(Twilio WhatsApp Sandbox) / TELEGRAM_BOT_TOKEN / TEXTBELT_KEY to control delivery; "
+                          "with no provider configured, calls are logged to the screen."),
     }
 
 

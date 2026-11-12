@@ -178,7 +178,7 @@ paths:
                 name: { type: string }
                 relation: { type: string, default: family }
                 phone: { type: string, description: "E.164-ish, e.g. +91 98xxxxx" }
-                via: { type: string, enum: [auto, textbelt, msg91, telegram, twilio], default: auto }
+                via: { type: string, enum: [auto, textbelt, msg91, telegram, twilio, twilio_whatsapp], default: auto }
       responses: { "201": { description: Created } }
   /api/emergency-contacts/{contact_id}:
     patch:

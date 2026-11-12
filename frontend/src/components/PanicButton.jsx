@@ -1,13 +1,13 @@
 // Panic button + emergency contacts manager.
 // Real outbound delivery: the backend dispatches via the configured provider
-// (TEXTBELT_KEY / MSG91_AUTH_KEY / TELEGRAM_BOT_TOKEN / TWILIO_*). With nothing
-// configured, deliveries are logged to the portal screen instead of sent.
+// (MSG91_AUTH_KEY for India SMS, TWILIO_* for Twilio SMS + Twilio WhatsApp Sandbox,
+//  TELEGRAM_BOT_TOKEN, TEXTBELT_KEY — with nothing configured, calls are screen-logged.)
 import { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Loader2, PhoneCall, Plus, Trash2, User, XCircle } from 'lucide-react';
 import { api } from '../services/api.js';
 
 const RELATIONS = ['spouse', 'parent', 'child', 'sibling', 'friend', 'doctor', 'caregiver', 'other'];
-const VIA = ['auto', 'textbelt', 'msg91', 'telegram', 'twilio'];
+const VIA = ['auto', 'msg91', 'twilio_whatsapp', 'twilio', 'telegram', 'textbelt'];
 
 export function PanicButton({ patientId, patientName, big = false }) {
   const [confirming, setConfirming] = useState(false);
@@ -88,9 +88,11 @@ export function PanicButton({ patientId, patientName, big = false }) {
                   <span className="flex shrink-0 items-center gap-1.5 text-xs font-bold">
                     {r.status === 'sent'
                       ? <><CheckCircle2 size={15} className="text-emerald-600" /><span className="text-emerald-700">Sent via {r.via}</span></>
-                      : r.status === 'screen'
-                        ? <><PhoneCall size={15} className="text-amber-600" /><span className="text-amber-700">Logged — no SMS provider configured</span></>
-                        : <><XCircle size={15} className="text-red-600" /><span className="text-red-700" title={r.detail}>Failed: {String(r.detail).slice(0, 60)}</span></>}
+                      : r.status === 'submitted'
+                        ? <><PhoneCall size={15} className="text-amber-600" /><span className="text-amber-700" title={r.detail}>Submitted via {r.via} — confirm in provider dashboard</span></>
+                        : r.status === 'screen'
+                          ? <><PhoneCall size={15} className="text-amber-600" /><span className="text-amber-700">Logged — no SMS provider configured</span></>
+                          : <><XCircle size={15} className="text-red-600" /><span className="text-red-700" title={r.detail}>Failed: {String(r.detail).slice(0, 60)}</span></>}
                   </span>
                 </li>
               ))}
@@ -132,9 +134,9 @@ export function EmergencyContacts({ patientId, patientName }) {
     <section className="card">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-bold"><PhoneCall size={18} className="text-red-500" /> Emergency contacts — {patientName || patientId}</h2>
-        <span className="text-[10px] uppercase tracking-widest text-gray-400">SMS via Textbelt / MSG91 / Twilio / Telegram</span>
+        <span className="text-[10px] uppercase tracking-widest text-gray-400">via MSG91 · Twilio WhatsApp · Textbelt · Telegram</span>
       </div>
-      <p className="mt-1 text-xs text-gray-500">Real outbound SMS requires the backend to be started with a provider configured (e.g. <code className="rounded bg-gray-100 px-1">NOTIFY_PROVIDER=msg91 MSG91_AUTH_KEY=…</code>). With no provider, sends are logged to the delivery screen — nothing leaves your machine.</p>
+      <p className="mt-1 text-xs text-gray-500">Real outbound SMS/WhatsApp requires the backend started with a provider configured (e.g. <code className="rounded bg-gray-100 px-1">MSG91_AUTH_KEY=…</code> or <code className="rounded bg-gray-100 px-1">TWILIO_ACCOUNT_SID=… TWILIO_AUTH_TOKEN=…</code>). With no provider, sends are logged to the delivery screen — nothing leaves your machine.</p>
 
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
 
@@ -176,7 +178,7 @@ export function EmergencyContacts({ patientId, patientName }) {
             </select>
             <button className="btn-primary !from-red-500 !to-rose-500 !shadow-red-200" disabled={busy} type="submit"><Plus size={16} /> Add</button>
           </div>
-          <p className="text-[10px] text-gray-400">Use full international format (+91…) for delivery. Default delivery is plain SMS; WhatsApp routes need provider-side setup (MSG91/Twilio WhatsApp templates).</p>
+          <p className="text-[10px] text-gray-400">Use full international format (+91…) for delivery. WhatsApp delivery: pick <b>twilio_whatsapp</b> and send the sandbox's <b>join &lt;code&gt;</b> once from your WhatsApp before the first test. SMS delivery: pick <b>msg91</b> (India).</p>
         </form>
       </div>
     </section>
