@@ -13,6 +13,7 @@ import { EnquiriesPage } from './enquiries/EnquirySection.jsx';
 import Live from './pages/Live.jsx';
 import Watch from './pages/Watch.jsx';
 import PatientCheckin from './pages/PatientCheckin.jsx';
+import Wearable from './pages/Wearable.jsx';
 import { Spinner } from './components/ui.jsx';
 
 function RequireAuth({ children }) {
@@ -30,6 +31,7 @@ export default function App() {
       <Route element={<RequireAuth><Layout /></RequireAuth>}>
         <Route index element={<Dashboard />} />
         <Route path="live" element={<Live />} />
+        <Route path="wearable" element={<Wearable />} />
         <Route path="patients" element={<PatientsPage />} />
         <Route path="patients/:id" element={<PatientProfile />} />
         <Route path="vitals" element={<VitalSignsPage />} />

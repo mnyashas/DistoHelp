@@ -30,6 +30,17 @@ Open http://localhost:5173. Demo sign-in: **Aadhaar 999941057058, mobile 9876543
 The Vite dev server proxies `/api` → `http://localhost:8000` (see `vite.config.js`), so no CORS
 configuration is needed. `npm run build` produces a static bundle in `dist/` (git-ignored).
 
+## Wearable Mode (`/wearable`) — real patient on a real phone
+
+The one path that streams a **real person's pulse** into the same pipeline as the synthetic cohort:
+
+1. Sign in on the phone (same Wi-Fi, `http://<lan-ip>:5173`) → **Wearable Mode**.
+2. Either pick an existing patient, or tap **Register real person** (e.g., a teammate) — creates a real profile on the spot.
+3. Choose the sensor: **Phone camera** (real fingertip PPG — no hardware, shows quality bar) or **BLE heart-rate band** (Polar H10 etc., Chrome/Edge).
+4. **Start streaming** — readings POST every 2 s to `/api/sensors/readings` (`source: camera`/`ble`), flow through the artifact filter → NEWS2 → HAPI FHIR → alerts. Watch the wrist view at `/watch?p=<id>` flash with real data.
+
+Motion-noise suppression works on real signals too — wave the phone or jiggle the finger to see artifacts filtered instead of alerted.
+
 ## Screens
 
 Dashboard · **Live Monitoring** (`/live`, WS-driven telemetry grid, alert stream with ack/resolve,

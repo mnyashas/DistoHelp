@@ -430,6 +430,7 @@ def push_reading(body: dict, x_device_key: Optional[str] = Header(None)):
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     db.execute("INSERT INTO sensor_readings(patient_id,device_key,read_at,vitals,created_at) "
                "VALUES(?,?,?,?,?)", (patient_id, x_device_key, now, db.dumps(vitals), db.now_iso()))
+    source = str(body.get("source") or "esp32")[:32]   # esp32 | camera | ble | wearable
     flags = db.loads(row["risk_flags"]) or {}
     v = dict(vitals)
     v["bmi"] = bmi(v.get("height"), v.get("weight"))
@@ -437,13 +438,13 @@ def push_reading(body: dict, x_device_key: Optional[str] = Header(None)):
     cur = db.execute(
         "INSERT INTO monitoring_records(patient_id,source,measured_at,vitals,news2,created_at) "
         "VALUES(?,?,?,?,?,?)",
-        (patient_id, "esp32", now, db.dumps(v), db.dumps(news2), db.now_iso()))
+        (patient_id, source, now, db.dumps(v), db.dumps(news2), db.now_iso()))
     for key, loinc in (("heartRate", "8867-4"), ("spo2", "2708-6"),
                        ("respiratoryRate", "9279-1"), ("temperature", "8310-5")):
         val = _num(v.get(key))
         if val is not None:
             try:
-                pipeline.ingest_vital(patient_id, loinc, val, source="esp32")
+                pipeline.ingest_vital(patient_id, loinc, val, source=source)
             except Exception:
                 pass
     return {"ok": True, "patient_id": patient_id, "record_id": cur.lastrowid, "measuredAt": now}
