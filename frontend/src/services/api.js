@@ -4,10 +4,11 @@ export const getToken = () => localStorage.getItem('spm_token');
 export const setToken = (token) =>
   token ? localStorage.setItem('spm_token', token) : localStorage.removeItem('spm_token');
 
-export async function api(path, { method = 'GET', body } = {}) {
+export async function api(path, { method = 'GET', body, headers: extraHeaders } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
+  if (extraHeaders) Object.assign(headers, extraHeaders);
 
   const res = await fetch(BASE + path, {
     method,

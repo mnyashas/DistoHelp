@@ -25,7 +25,10 @@ tokens are random hex stored in SQLite — this is a demo build, not real authen
 | POST | `/api/checkins` `{patient_id, breathlessness(0-2), fever(0/1), dizziness(0-2), notes?}` | PDF Hint #1 — daily symptom check-in; integrates into monitoring score (+1/+2 each) |
 | GET  | `/api/checkins/{patient_id}` | check-in history |
 | GET  | `/api/sensors/{id}/latest` | `{connected, reading:{timestamp, vitals}}` |
-| POST | `/api/sensors/readings` `x-device-key` | ESP32 (MAX30102 + DS18B20) ingestion; header must equal `DEVICE_KEY` env (default `demo-esp32-key`) |
+| POST | `/api/sensors/readings` `x-device-key` | ESP32/camera/BLE ingestion; header must equal `DEVICE_KEY` env (default `demo-esp32-key`) |
+| POST | `/api/patient/send-otp` `{mobile}` | patient portal onboarding — finds the registered patient by mobile |
+| POST | `/api/patient/verify` `{mobile, otp}` | demo OTP `123456` → patient-scoped token |
+| GET  | `/api/patient/me` (Bearer) | self-only report: conditions, meds, records, NEWS2, alerts, check-ins — print-friendly |
 
 ## Scoring shape (`news2` object in records & scores)
 

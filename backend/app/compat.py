@@ -14,7 +14,7 @@ from typing import Optional
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
-from . import config, constants, db, pipeline
+from . import alerts, config, constants, db, pipeline
 
 router = APIRouter(prefix="/api")
 
@@ -164,6 +164,98 @@ def _patient_summary(patient: dict) -> dict:
 
 
 # ---------- auth (demo only) ----------
+def _digits(s: str) -> str:
+    return "".join(ch for ch in str(s or "") if ch.isdigit())
+
+
+@router.post("/patient/send-otp")
+def patient_send_otp(body: dict):
+    mobile = _digits(body.get("mobile"))
+    if len(mobile) != 10:
+        raise HTTPException(422, "Mobile must be 10 digits")
+    row = None
+    for p in db.query("SELECT id,name,phone FROM patients WHERE phone IS NOT NULL AND phone != ''"):
+        if _digits(p["phone"]) == mobile:
+            row = p
+            break
+    if not row:
+        raise HTTPException(404, "No registered patient with that mobile number")
+    return {"sent": True, "found": True, "patient_name": row["name"],
+            "demoOtp": config.DEMO_OTP, "message": "OTP simulated (demo mode)"}
+
+
+@router.post("/patient/verify")
+def patient_verify(body: dict):
+    mobile = _digits(body.get("mobile"))
+    otp = str(body.get("otp", ""))
+    if otp != config.DEMO_OTP:
+        raise HTTPException(401, "Invalid OTP (demo OTP is in the yellow box)")
+    row = None
+    for p in db.query("SELECT * FROM patients"):
+        if _digits(p["phone"]) == mobile:
+            row = p
+            break
+    if not row:
+        raise HTTPException(404, "No registered patient with that mobile number")
+    token = secrets.token_hex(16)
+    user = {"name": row["name"], "role": "patient", "patient_id": row["id"]}
+    db.execute("INSERT INTO auth_tokens(token,aadhaar,name,role,created_at) VALUES(?,?,?,?,?)",
+               (token, f"PHONE:{mobile}", user["name"], "patient", db.now_iso()))
+    return {"token": token, "user": user,
+            "patient": {"id": row["id"], "fullName": row["name"], "age": row["age"],
+                        "gender": (row["gender"] or "").capitalize(),
+                        "conditions": [c.get("display") for c in (db.loads(row["conditions"]) or [])],
+                        "phone": row["phone"]}}
+
+
+@router.get("/patient/me")
+def patient_me(authorization: Optional[str] = Header(None)):
+    token = (authorization or "").removeprefix("Bearer ").strip()
+    row = db.query_one("SELECT * FROM auth_tokens WHERE token=? AND aadhaar LIKE 'PHONE:%'", (token,)) if token else None
+    if not row:
+        raise HTTPException(401, "Invalid or expired token")
+    mobile = row["aadhaar"].split(":", 1)[1]
+    patient_row = None
+    for p in db.query("SELECT * FROM patients"):
+        if _digits(p["phone"]) == mobile:
+            patient_row = p
+            break
+    if not patient_row:
+        raise HTTPException(404, "Patient not found")
+    pid = patient_row["id"]
+    records = [_record_public(r) for r in db.query(
+        "SELECT * FROM monitoring_records WHERE patient_id=? ORDER BY id ASC", (pid,))]
+    checkins = db.query(
+        "SELECT * FROM checkins WHERE patient_id=? ORDER BY id DESC LIMIT 10", (pid,))
+    alert_rows = alerts.list_alerts(patient_id=pid, status=None, limit=20)
+    totals = [r["news2"]["total"] for r in records]
+    level = "none"
+    if records:
+        last_n2 = records[-1]["news2"]
+        level = (last_n2.get("risk", {}) or {}).get("level", "none")
+    return {
+        "patient": {
+            "id": pid, "fullName": patient_row["name"], "age": patient_row["age"],
+            "gender": (patient_row["gender"] or "").capitalize(),
+            "phone": patient_row["phone"],
+            "conditions": [c.get("display") for c in (db.loads(patient_row["conditions"]) or [])],
+            "medications": db.loads(patient_row["medications"]) or [],
+            "risk_flags": db.loads(patient_row["risk_flags"]) or {},
+            "medicalHistory": patient_row.get("medical_history") or "",
+        },
+        "records": records,
+        "latest_news2": level,
+        "checkins": [
+            {"id": c["id"], "breathlessness": c["breathlessness"], "fever": c["fever"],
+             "dizziness": c["dizziness"], "notes": c["notes"],
+             "createdAt": c["created_at"]} for c in checkins
+        ],
+        "alerts": alert_rows,
+        "disclaimer": config.DISCLAIMER,
+    }
+
+
+# ---------- staff auth ----------
 @router.post("/auth/send-otp")
 def send_otp(body: dict):
     aadhaar = str(body.get("aadhaar", ""))

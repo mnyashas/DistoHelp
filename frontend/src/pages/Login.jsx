@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { api } from '../services/api.js';
 import { useAuth } from '../services/AuthContext.jsx';
@@ -79,6 +79,9 @@ export default function Login() {
               </button>
               <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
                 Demo account: Aadhaar 9999 4105 7058 · mobile 98765 43210 (dummy data).
+              </p>
+              <p className="text-center text-sm">
+                <Link to="/me" className="text-teal-600 hover:underline">Patient? View your report</Link>
               </p>
             </form>
           ) : (

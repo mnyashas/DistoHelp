@@ -66,6 +66,17 @@ through the Vite proxy (`/api` → `:8000`) via the compatibility layer in `back
 PS-03 contract endpoints remain available alongside it. Frontend ↔ backend link verified:
 HTML served at :5173, proxied `/api/patients` returns the 5 seeded patients.
 
+## Connect a phone (LAN / same Wi-Fi)
+
+The frontend runs with `npm run dev -- --host`, so any phone on the same Wi-Fi can open it:
+
+- Staff app: **http://10.57.20.137:5173** — QR in Review pane (`frontend/public/lan-app.png`)
+- Patient self-report: **http://10.57.20.137:5173/me** — QR (`frontend/public/lan-portal.png`)
+
+The phone needs no app install — add the app to the home screen (Chrome → menu → *Add to Home screen*)
+for a fullscreen, PWA-standalone experience (manifest + icons committed). Re-run
+`python scripts/make_qr.py` whenever the laptop's Wi-Fi IP changes.
+
 ## Demo script (6 minutes)
 
 1. Sign in at http://localhost:5173 → Dashboard: 5 **real Synthea-generated** patients (see

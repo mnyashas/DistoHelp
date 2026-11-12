@@ -41,12 +41,22 @@ The one path that streams a **real person's pulse** into the same pipeline as th
 
 Motion-noise suppression works on real signals too — wave the phone or jiggle the finger to see artifacts filtered instead of alerted.
 
+## Patient self-report (`/me`) — sign in with a mobile number
+
+Any registered patient's phone number opens **only their own** report — no staff login required:
+
+- `POST /api/patient/send-otp {mobile}` → OTP (demo: always `123456`)
+- `POST /api/patient/verify {mobile, otp}` → patient-scoped token
+- `GET /api/patient/me` (Bearer) → own conditions, meds (beta-blockers flagged), records, NEWS2 trend chart, alerts, check-ins, print-friendly view
+- Demo numbers: `9845001001` Beryl (p01), `...02002` Denis, `...03003` Athena, `...04004` April, `...05005` Andre — OTP `123456` everywhere
+
+Also addable from the staff login page ("Patient? View your report") and directly at `/me` — best demoed on a phone.
+
 ## Screens
 
 Dashboard · **Live Monitoring** (`/live`, WS-driven telemetry grid, alert stream with ack/resolve,
-demo streams, BLE band connect) · Patients (search/register/edit/profile) · Vital Signs (manual/
-simulated/ESP32 input, live NEWS2 preview) · Sensor Monitoring · Risk Assessment · Monitoring
-History · Patient Enquiries · Settings.
+demo streams, BLE band connect) · **Wearable Mode** (`/wearable`) · Patients · Vital Signs ·
+Sensor Monitoring · Risk Assessment · Monitoring History · Patient Enquiries · Settings.
 
 ## Watch companion
 

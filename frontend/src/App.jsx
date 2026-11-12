@@ -14,6 +14,7 @@ import Live from './pages/Live.jsx';
 import Watch from './pages/Watch.jsx';
 import PatientCheckin from './pages/PatientCheckin.jsx';
 import Wearable from './pages/Wearable.jsx';
+import PatientPortal from './pages/PatientPortal.jsx';
 import { Spinner } from './components/ui.jsx';
 
 function RequireAuth({ children }) {
@@ -27,6 +28,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/watch" element={<Watch />} />   {/* kiosk companion UI — no chrome */}
+      <Route path="/me" element={<PatientPortal />} />  {/* patient self-service portal */}
       <Route path="/patient" element={<PatientCheckin />} /> {/* patient-facing symptom check-in */}
       <Route element={<RequireAuth><Layout /></RequireAuth>}>
         <Route index element={<Dashboard />} />

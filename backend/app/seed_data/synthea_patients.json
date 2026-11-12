@@ -95,7 +95,7 @@
     ],
     "risk_flags": {},
     "discharge_note": "Synthea-generated asthma discharge. Primary condition: Childhood asthma (disorder).",
-    "phone": "98450 00001",
+    "phone": "98450 05005",
     "address": "Synthea-generated record, slot p05"
   },
   {
@@ -206,7 +206,7 @@
     ],
     "risk_flags": {},
     "discharge_note": "Synthea-generated post op discharge. Primary condition: History of appendectomy (situation).",
-    "phone": "98450 00001",
+    "phone": "98450 04004",
     "address": "Synthea-generated record, slot p04"
   },
   {
@@ -353,7 +353,7 @@
     ],
     "risk_flags": {},
     "discharge_note": "Synthea-generated diabetes discharge. Primary condition: Diabetes mellitus type 2 (disorder).",
-    "phone": "98450 00001",
+    "phone": "98450 03003",
     "address": "Synthea-generated record, slot p03"
   },
   {
@@ -551,7 +551,7 @@
       "beta_blocker": true
     },
     "discharge_note": "Synthea-generated copd discharge. Primary condition: Chronic obstructive bronchitis (disorder).",
-    "phone": "98450 00001",
+    "phone": "98450 01001",
     "address": "Synthea-generated record, slot p01"
   },
   {
@@ -686,7 +686,7 @@
     ],
     "risk_flags": {},
     "discharge_note": "Synthea-generated heart failure discharge. Primary condition: Chronic congestive heart failure (disorder).",
-    "phone": "98450 00001",
+    "phone": "98450 02002",
     "address": "Synthea-generated record, slot p02"
   }
 ]
