@@ -30,19 +30,19 @@ export default function PatientProfile() {
 
   return (
     <div className="space-y-6">
-      <Link to="/patients" className="inline-flex items-center gap-1 text-sm text-teal-600 hover:underline">
+      <Link to="/patients" className="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline">
         <ArrowLeft size={14} /> All patients
       </Link>
 
       <section className="card flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400 to-teal-500 text-lg font-bold text-white">
+          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-500 text-lg font-bold text-white">
             {initials(p.fullName)}
           </div>
           <div>
-            <p className="text-xs text-slate-500">{p.id}</p>
+            <p className="text-xs text-gray-500">{p.id}</p>
             <h1 className="text-2xl font-bold">{p.fullName}</h1>
-            <p className="text-sm text-slate-500">{p.age} yrs · {p.gender} · Registered {fmt(p.registeredOn)}</p>
+            <p className="text-sm text-gray-500">{p.age} yrs · {p.gender} · Registered {fmt(p.registeredOn)}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -65,19 +65,19 @@ export default function PatientProfile() {
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="card space-y-4 text-sm lg:col-span-1">
           <h2 className="font-bold tracking-wide">PERSONAL INFORMATION</h2>
-          <p className="flex items-center gap-2"><Phone size={16} className="text-teal-500" /> {p.phone}</p>
-          <p className="flex items-start gap-2"><MapPin size={16} className="mt-0.5 shrink-0 text-teal-500" /> {p.address || '—'}</p>
+          <p className="flex items-center gap-2"><Phone size={16} className="text-brand-500" /> {p.phone}</p>
+          <p className="flex items-start gap-2"><MapPin size={16} className="mt-0.5 shrink-0 text-brand-500" /> {p.address || '—'}</p>
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase text-slate-500">Existing conditions</p>
+            <p className="mb-1 text-xs font-semibold uppercase text-gray-500">Existing conditions</p>
             <div className="flex flex-wrap gap-2">
               {p.conditions.length
-                ? p.conditions.map((c) => <span key={c} className="rounded-full bg-teal-50 px-2.5 py-1 text-xs text-teal-700">{c}</span>)
-                : <span className="text-slate-400">None recorded</span>}
+                ? p.conditions.map((c) => <span key={c} className="rounded-full bg-brand-50 px-2.5 py-1 text-xs text-brand-700">{c}</span>)
+                : <span className="text-gray-400">None recorded</span>}
             </div>
           </div>
           <div>
-            <p className="mb-1 text-xs font-semibold uppercase text-slate-500">Medical history</p>
-            <p className="text-slate-700">{p.medicalHistory || '—'}</p>
+            <p className="mb-1 text-xs font-semibold uppercase text-gray-500">Medical history</p>
+            <p className="text-gray-700">{p.medicalHistory || '—'}</p>
           </div>
         </section>
         <div className="lg:col-span-2">

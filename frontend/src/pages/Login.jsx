@@ -74,28 +74,28 @@ export default function Login() {
 
   return (
     <div className="grid min-h-screen md:grid-cols-2">
-      <div className="hidden flex-col justify-between bg-navy-900 bg-[radial-gradient(circle_at_30%_20%,rgba(20,184,166,.35),transparent_50%)] p-12 text-white md:flex">
+      <div className="hidden flex-col justify-between bg-brand-950 bg-[radial-gradient(circle_at_30%_15%,rgba(70,95,255,.4),transparent_55%)] p-12 text-white md:flex">
         <Brand />
         <div>
           <h1 className="text-4xl font-extrabold leading-tight">
-            Detect deterioration early. <span className="text-teal-300">Act faster.</span>
+            Detect deterioration early. <span className="text-brand-300">Act faster.</span>
           </h1>
-          <p className="mt-4 max-w-md text-slate-300">
+          <p className="mt-4 max-w-md text-brand-100/70">
             Monitor vital signs, calculate NEWS2 early warning scores and keep patients safe —
             one workspace for care teams and one personal view for patients.
           </p>
         </div>
-        <p className="text-xs text-slate-400">Decision-support tool · Demo build with simulated OTP and dummy data</p>
+        <p className="text-xs text-brand-100/50">Decision-support tool · Demo build with simulated OTP and dummy data</p>
       </div>
 
-      <div className="grid place-items-center bg-slate-50 p-6">
+      <div className="grid place-items-center bg-white p-6">
         <div className="card w-full max-w-md p-8">
           {/* role switcher */}
-          <div className="mb-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1.5">
+          <div className="mb-6 grid grid-cols-2 rounded-2xl bg-gray-100 p-1.5">
             {ROLES.map(({ id, label, icon: Icon }) => (
               <button key={id} onClick={() => switchRole(id)}
                 className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
-                  role === id ? 'bg-white text-navy-900 shadow' : 'text-slate-500 hover:text-slate-700'
+                  role === id ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700'
                 }`}>
                 <Icon size={17} /> {label}
               </button>
@@ -103,10 +103,10 @@ export default function Login() {
           </div>
 
           <div className="mb-6 flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-teal-50 text-teal-600"><ShieldCheck /></div>
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-600"><ShieldCheck /></div>
             <div>
-              <h2 className="text-xl font-bold">{role === 'staff' ? 'Staff sign in' : 'Patient sign in'}</h2>
-              <p className="text-xs text-slate-500">{ROLES.find((r) => r.id === role).hint}</p>
+              <h2 className="text-xl font-bold text-gray-900">{role === 'staff' ? 'Staff sign in' : 'Patient sign in'}</h2>
+              <p className="text-xs text-gray-500">{ROLES.find((r) => r.id === role).hint}</p>
             </div>
           </div>
 
@@ -124,7 +124,7 @@ export default function Login() {
                     <input className="input" inputMode="numeric" placeholder="10-digit mobile"
                       value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} required />
                   </div>
-                  <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
+                  <p className="rounded-xl bg-gray-50 p-3 text-xs text-gray-500">
                     Demo account: Aadhaar <b>9999 4105 7058</b> · mobile <b>98765 43210</b> · OTP <b>123456</b>
                   </p>
                 </>
@@ -135,11 +135,11 @@ export default function Login() {
                     <input className="input" inputMode="numeric" placeholder="10-digit mobile"
                       value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} required />
                   </div>
-                  <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
-                    <p className="mb-1.5 font-semibold text-slate-600">Any registered patient can sign in — the Synthea cohort:</p>
+                  <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-500">
+                    <p className="mb-1.5 font-semibold text-gray-600">Any registered patient can sign in — the Synthea cohort:</p>
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                       {PATIENT_HINTS.map(([name, num]) => (
-                        <p key={num}><span className="text-slate-400">{name}:</span> <b className="text-navy-800">{num}</b></p>
+                        <p key={num}><span className="text-gray-400">{name}:</span> <b className="text-gray-800">{num}</b></p>
                       ))}
                     </div>
                     <p className="mt-2"><b>New patients you add work too</b> — they sign in with the phone you registered them with (give it 10 digits). OTP: <b>123456</b> for everyone.</p>
@@ -153,7 +153,7 @@ export default function Login() {
             </form>
           ) : (
             <form onSubmit={verify} className="space-y-4">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-gray-600">
                 {role === 'staff'
                   ? 'Enter the 6-digit OTP sent to your registered mobile number.'
                   : `Enter the OTP to view ${patientName ? patientName + "'s" : 'your'} report.`}
@@ -169,7 +169,7 @@ export default function Login() {
               <button className="btn-primary w-full justify-center" disabled={busy || otp.length !== 6}>
                 {role === 'staff' ? 'Verify & enter workspace' : 'View my report'}
               </button>
-              <button type="button" className="w-full text-sm text-teal-600 hover:underline"
+              <button type="button" className="w-full text-sm text-brand-600 hover:underline"
                 onClick={() => { setStep('credentials'); setOtp(''); setError(''); }}>
                 ← Back
               </button>

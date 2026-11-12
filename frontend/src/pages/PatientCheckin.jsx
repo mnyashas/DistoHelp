@@ -45,15 +45,15 @@ export default function PatientCheckin() {
 
   if (result) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-50 p-6">
+      <div className="grid min-h-screen place-items-center bg-gray-50 p-6">
         <div className="card w-full max-w-md text-center">
           {result.error ? (
             <p className="text-red-600">{result.error}</p>
           ) : (
             <>
-              <CheckCircle2 size={48} className="mx-auto text-teal-500" />
+              <CheckCircle2 size={48} className="mx-auto text-brand-500" />
               <h1 className="mt-3 text-2xl font-bold">Thank you</h1>
-              <p className="mt-2 text-slate-600">
+              <p className="mt-2 text-gray-600">
                 Your symptoms were recorded for today.
                 {result.score_modifier > 0
                   ? ` Your care team sees this report as part of your monitoring (severity +${result.score_modifier}).`
@@ -73,13 +73,13 @@ export default function PatientCheckin() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-6 py-4">
+    <div className="min-h-screen bg-gray-50">
+      <header className="border-b border-gray-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-lg items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-teal-500 text-white"><Stethoscope size={22} /></div>
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-500 text-white"><Stethoscope size={22} /></div>
           <div>
             <p className="font-bold">DIstoHelp — Daily Check-in</p>
-            <p className="text-xs text-slate-500">Takes 30 seconds. Your care team monitors these answers.</p>
+            <p className="text-xs text-gray-500">Takes 30 seconds. Your care team monitors these answers.</p>
           </div>
         </div>
       </header>
@@ -100,8 +100,8 @@ export default function PatientCheckin() {
                 <button key={val} onClick={() => setAnswers((a) => ({ ...a, [key]: val }))}
                   className={`rounded-xl border px-3 py-3 text-sm font-semibold transition ${
                     answers[key] === val
-                      ? val === 0 ? 'border-teal-500 bg-teal-50 text-teal-800' : val === 1 ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-red-400 bg-red-50 text-red-800'
-                      : 'border-slate-200 bg-white text-slate-600'
+                      ? val === 0 ? 'border-brand-500 bg-brand-50 text-brand-800' : val === 1 ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-red-400 bg-red-50 text-red-800'
+                      : 'border-gray-200 bg-white text-gray-600'
                   }`}>
                   {text}
                 </button>
@@ -118,7 +118,7 @@ export default function PatientCheckin() {
         <button className="btn-primary w-full justify-center py-4 text-base" disabled={busy || !patientId} onClick={submit}>
           Submit daily check-in <ChevronRight size={18} />
         </button>
-        <p className="text-center text-[11px] uppercase tracking-widest text-slate-400">
+        <p className="text-center text-[11px] uppercase tracking-widest text-gray-400">
           Clinical decision support only — not a medical diagnosis system
         </p>
       </main>

@@ -139,8 +139,8 @@ export default function Wearable() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold"><Watch className="text-teal-500" /> Wearable Mode</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="flex items-center gap-2 text-2xl font-bold"><Watch className="text-brand-500" /> Wearable Mode</h1>
+        <p className="text-sm text-gray-500">
           Turn this phone into the wearable for a <b>real person</b> — a teammate's actual pulse streams into the same pipeline as the monitored patients (artifact filter, NEWS2, alerts).
         </p>
       </div>
@@ -148,7 +148,7 @@ export default function Wearable() {
       {/* STEP 1 — choose or register the real patient */}
       <section className="card space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-bold"><span className="mr-2 inline-grid h-6 w-6 place-items-center rounded-full bg-navy-900 text-xs text-white">1</span>Whose vitals are we streaming?</h2>
+          <h2 className="font-bold"><span className="mr-2 inline-grid h-6 w-6 place-items-center rounded-full bg-gray-900 text-xs text-white">1</span>Whose vitals are we streaming?</h2>
           <button className="btn-ghost text-xs" onClick={() => setRegistering((v) => !v)}>
             <UserPlus size={14} /> {registering ? 'Pick existing patient' : 'Register real person'}
           </button>
@@ -172,38 +172,38 @@ export default function Wearable() {
           </form>
         )}
         {selected && !registering && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-gray-500">
             Streaming target: <b>{selected.fullName}</b> · {selected.id} · conditions: {selected.conditions?.join(', ') || '—'} ·{' '}
-            <Link className="text-teal-600 hover:underline" to={`/patients/${selected.id}`}>open patient file →</Link>
+            <Link className="text-brand-600 hover:underline" to={`/patients/${selected.id}`}>open patient file →</Link>
           </p>
         )}
       </section>
 
       {/* STEP 2 — choose the measurement source */}
       <section className="card">
-        <h2 className="mb-3 font-bold"><span className="mr-2 inline-grid h-6 w-6 place-items-center rounded-full bg-navy-900 text-xs text-white">2</span>Measure with</h2>
+        <h2 className="mb-3 font-bold"><span className="mr-2 inline-grid h-6 w-6 place-items-center rounded-full bg-gray-900 text-xs text-white">2</span>Measure with</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <button onClick={() => setSource('camera')}
-            className={`rounded-2xl border-2 p-4 text-left transition ${source === 'camera' ? 'border-teal-500 bg-teal-50' : 'border-slate-200 hover:border-slate-300'}`}>
-            <Camera size={26} className="text-teal-600" />
+            className={`rounded-2xl border-2 p-4 text-left transition ${source === 'camera' ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-gray-300'}`}>
+            <Camera size={26} className="text-brand-600" />
             <p className="mt-2 font-bold">Phone camera</p>
-            <p className="text-xs text-slate-500">Fingertip on the rear camera + torch. Real PPG measurement — no hardware needed. HR only.</p>
+            <p className="text-xs text-gray-500">Fingertip on the rear camera + torch. Real PPG measurement — no hardware needed. HR only.</p>
           </button>
           <button onClick={() => setSource('ble')}
-            className={`rounded-2xl border-2 p-4 text-left transition ${source === 'ble' ? 'border-teal-500 bg-teal-50' : 'border-slate-200 hover:border-slate-300'}`}>
+            className={`rounded-2xl border-2 p-4 text-left transition ${source === 'ble' ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-gray-300'}`}>
             <Bluetooth size={26} className="text-sky-600" />
             <p className="mt-2 font-bold">BLE heart-rate band</p>
-            <p className="text-xs text-slate-500">Any standard BLE strap (Polar H10, chest band). Chrome/Edge only. HR only.</p>
+            <p className="text-xs text-gray-500">Any standard BLE strap (Polar H10, chest band). Chrome/Edge only. HR only.</p>
           </button>
         </div>
         {source === 'camera' &&
-          <p className="mt-2 text-[11px] text-slate-400">SpO₂ &amp; temperature need a MAX30102/DS18B20 (see <code>firmware/</code>) — the camera gives true pulse rate only.</p>}
+          <p className="mt-2 text-[11px] text-gray-400">SpO₂ &amp; temperature need a MAX30102/DS18B20 (see <code>firmware/</code>) — the camera gives true pulse rate only.</p>}
       </section>
 
       {/* STEP 3 — streaming console */}
       <section className="card space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-bold"><span className="mr-2 inline-grid h-6 w-6 place-items-center rounded-full bg-navy-900 text-xs text-white">3</span>Stream to dashboard</h2>
+          <h2 className="font-bold"><span className="mr-2 inline-grid h-6 w-6 place-items-center rounded-full bg-gray-900 text-xs text-white">3</span>Stream to dashboard</h2>
           {!streaming ? (
             <button className="btn-primary" onClick={start}><Radio size={16} /> Start streaming</button>
           ) : (
@@ -212,35 +212,35 @@ export default function Wearable() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-[auto_1fr_auto] md:items-center">
-          <div className="relative h-40 w-40 overflow-hidden rounded-2xl bg-slate-900 md:h-44 md:w-44">
+          <div className="relative h-40 w-40 overflow-hidden rounded-2xl bg-gray-900 md:h-44 md:w-44">
             <video ref={videoRef} className="h-full w-full object-cover opacity-70" muted playsInline />
             <canvas ref={canvasRef} width={160} height={120} className="hidden" />
             {source === 'ble' && (
               <div className="grid h-full w-full place-items-center text-sky-400"><Bluetooth size={48} /></div>
             )}
-            <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] uppercase text-slate-300">
+            <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] uppercase text-gray-300">
               {source === 'camera' ? 'camera · finger on lens' : 'ble band'}
             </span>
           </div>
           <div>
-            <canvas ref={waveRef} width={340} height={100} className="w-full rounded-xl bg-slate-900" />
-            <p className="mt-1 text-xs text-slate-500">Pulse waveform — the same PPG trace a pulse oximeter sees.</p>
+            <canvas ref={waveRef} width={340} height={100} className="w-full rounded-xl bg-gray-900" />
+            <p className="mt-1 text-xs text-gray-500">Pulse waveform — the same PPG trace a pulse oximeter sees.</p>
           </div>
           <div className="text-center md:w-32">
             <HeartPulse size={30} className={`mx-auto text-red-400 ${streaming ? 'animate-pulse' : ''}`} />
-            <p className="mt-1 text-6xl font-black tabular-nums leading-none text-navy-900">{bpm ?? '––'}</p>
-            <p className="text-[10px] uppercase tracking-widest text-slate-500">bpm · live</p>
-            <div className="mt-1.5 h-2 w-full overflow-hidden rounded bg-slate-200">
-              <div className="h-full bg-teal-500 transition-all" style={{ width: `${Math.round(quality * 100)}%` }} />
+            <p className="mt-1 text-6xl font-black tabular-nums leading-none text-gray-900">{bpm ?? '––'}</p>
+            <p className="text-[10px] uppercase tracking-widest text-gray-500">bpm · live</p>
+            <div className="mt-1.5 h-2 w-full overflow-hidden rounded bg-gray-200">
+              <div className="h-full bg-brand-500 transition-all" style={{ width: `${Math.round(quality * 100)}%` }} />
             </div>
-            <p className="mt-1 text-[9px] uppercase text-slate-400">signal quality</p>
+            <p className="mt-1 text-[9px] uppercase text-gray-400">signal quality</p>
           </div>
         </div>
 
         {msg && <p className="text-sm text-amber-700">{msg}</p>}
         {streaming && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-sm">
-            <p className="text-teal-900">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm">
+            <p className="text-brand-900">
               <b>Streaming to {selected?.fullName}</b> · {sent} readings sent{lastSentAt ? ` · last ${lastSentAt.toLocaleTimeString()}` : ''}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -249,7 +249,7 @@ export default function Wearable() {
             </div>
           </div>
         )}
-        <p className="text-[11px] text-slate-400">
+        <p className="text-[11px] text-gray-400">
           The pulse flows through the same artifact filter and NEWS2 engine as the simulated patients — try walking around or shaking the phone to see motion-noise suppression on a real signal.
         </p>
       </section>

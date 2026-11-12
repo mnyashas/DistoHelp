@@ -36,11 +36,11 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Clinical Dashboard</h1>
-          <p className="text-sm text-slate-500">Registered patients and early warning status</p>
+          <p className="text-sm text-gray-500">Registered patients and early warning status</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <form onSubmit={search} className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input className="input w-72 pl-9" placeholder="Search name, ID or phone"
               value={q} onChange={(e) => setQ(e.target.value)} />
           </form>
@@ -73,19 +73,19 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className="text-sm text-slate-500">No assessments yet.</p>
+            <p className="text-sm text-gray-500">No assessments yet.</p>
           )}
         </div>
 
         <div className="card xl:col-span-2">
           <h2 className="mb-3 font-semibold">Latest monitoring records</h2>
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-gray-100">
             {s.recent?.map((r) => (
               <li key={r.measuredAt + r.patientId} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <Link to={`/patients/${r.patientId}`} className="font-medium text-navy-800 hover:underline">
+                <Link to={`/patients/${r.patientId}`} className="font-medium text-gray-800 hover:underline">
                   {r.patientName}
                 </Link>
-                <span className="text-xs text-slate-500">{fmt(r.measuredAt)}</span>
+                <span className="text-xs text-gray-500">{fmt(r.measuredAt)}</span>
                 <span className="text-sm font-bold">Score {r.total}</span>
                 <RiskBadge level={r.risk} />
               </li>

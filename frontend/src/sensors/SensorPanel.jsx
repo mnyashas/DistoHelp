@@ -78,17 +78,17 @@ export default function SensorPanel({ patient, onReading, onSaved }) {
   }, [mode, patient.id]);
 
   return (
-    <div className="rounded-xl border border-slate-200 p-4">
+    <div className="rounded-xl border border-gray-200 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Radio size={18} className="text-teal-500" />
+          <Radio size={18} className="text-brand-500" />
           <h3 className="font-semibold">REAL-TIME SENSOR MONITORING</h3>
         </div>
-        <div className="flex flex-wrap rounded-xl bg-slate-100 p-1">
+        <div className="flex flex-wrap rounded-xl bg-gray-100 p-1">
           {MODES.map((m) => (
             <button key={m.id} onClick={() => setMode(m.id)}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                mode === m.id ? 'bg-white text-navy-900 shadow' : 'text-slate-500'
+                mode === m.id ? 'bg-white text-gray-900 shadow' : 'text-gray-500'
               }`}>
               {m.label}
             </button>
@@ -98,10 +98,10 @@ export default function SensorPanel({ patient, onReading, onSaved }) {
 
       <div className="mt-3 flex flex-wrap items-center gap-4 text-xs">
         <span className="flex items-center gap-2">
-          <span className={`h-2.5 w-2.5 rounded-full ${connected ? 'animate-pulse bg-green-500' : 'bg-slate-300'}`} />
+          <span className={`h-2.5 w-2.5 rounded-full ${connected ? 'animate-pulse bg-green-500' : 'bg-gray-300'}`} />
           {mode === 'manual' ? 'Manual input active' : connected ? 'Connected' : 'Not connected'}
         </span>
-        {lastTs && <span className="text-slate-500">Last data: {fmt(lastTs)}</span>}
+        {lastTs && <span className="text-gray-500">Last data: {fmt(lastTs)}</span>}
         {mode === 'camera' && (
           <span className="rounded bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-800">
             REAL fingertip photoplethysmography — measured, not simulated
@@ -113,7 +113,7 @@ export default function SensorPanel({ patient, onReading, onSaved }) {
           </span>
         )}
         {mode === 'esp32' && (
-          <span className="text-slate-500">
+          <span className="text-gray-500">
             Device posts to /api/sensors/readings with the x-device-key header.
           </span>
         )}

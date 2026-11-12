@@ -93,10 +93,10 @@ export default function VitalsPanel({ patient, onSaved, defaultOpen = false }) {
     <section className="card">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-teal-50 text-teal-600"><HeartPulse /></div>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600"><HeartPulse /></div>
           <div className="text-left">
             <h2 className="font-bold tracking-wide">VITAL SIGNS MONITORING</h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-gray-500">
               {latest ? `Last reading ${fmt(latest.measuredAt)} · source: ${latest.source}` : 'No readings yet'}
             </p>
           </div>
@@ -115,8 +115,8 @@ export default function VitalsPanel({ patient, onSaved, defaultOpen = false }) {
               const abnormal = n !== null && ABNORMAL[f.key]?.(n);
               return (
                 <div key={f.key}
-                  className={`rounded-xl border p-3 transition ${abnormal ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-slate-50'}`}>
-                  <label className="text-xs font-semibold text-slate-600">{f.label}</label>
+                  className={`rounded-xl border p-3 transition ${abnormal ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <label className="text-xs font-semibold text-gray-600">{f.label}</label>
                   <div className="mt-1 flex items-baseline gap-1">
                     <input
                       type="number"
@@ -124,9 +124,9 @@ export default function VitalsPanel({ patient, onSaved, defaultOpen = false }) {
                       readOnly={f.readOnly}
                       value={raw}
                       onChange={(e) => change(f.key, e.target.value)}
-                      className="w-full bg-transparent text-xl font-bold text-navy-900 outline-none"
+                      className="w-full bg-transparent text-xl font-bold text-gray-900 outline-none"
                     />
-                    <span className="shrink-0 text-xs text-slate-500">{f.unit}</span>
+                    <span className="shrink-0 text-xs text-gray-500">{f.unit}</span>
                   </div>
                   {abnormal && <p className="mt-1 text-[11px] font-semibold text-red-600">Outside expected range</p>}
                 </div>
@@ -159,7 +159,7 @@ export default function VitalsPanel({ patient, onSaved, defaultOpen = false }) {
             <button className="btn-primary" disabled={busy} onClick={save}>
               <Save size={16} /> Save reading
             </button>
-            <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Source: {source}</span>
+            <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">Source: {source}</span>
             {msg && <span className="text-sm text-green-700">{msg}</span>}
             {err && <span className="text-sm text-red-600">{err}</span>}
           </div>

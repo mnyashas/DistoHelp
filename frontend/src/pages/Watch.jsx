@@ -98,7 +98,7 @@ export default function Watch() {
 
       <div className="relative flex h-full flex-col items-center justify-between p-6 pt-5">
         {/* top row: time + link state */}
-        <div className="flex w-full items-center justify-between text-[13px] text-slate-400">
+        <div className="flex w-full items-center justify-between text-[13px] text-gray-400">
           <span className="tabular-nums tracking-widest">{now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
           <div className="flex items-center gap-2">
             {connected ? <Wifi size={14} className="text-emerald-400" /> : <WifiOff size={14} className="text-red-400" />}
@@ -108,7 +108,7 @@ export default function Watch() {
 
         {/* patient */}
         <div className="text-center">
-          <p className="text-[11px] uppercase tracking-[0.35em] text-slate-500">Post-discharge monitor</p>
+          <p className="text-[11px] uppercase tracking-[0.35em] text-gray-500">Post-discharge monitor</p>
           <h1 className="mt-0.5 text-3xl font-extrabold tracking-wide">{patientName}</h1>
         </div>
 
@@ -118,7 +118,7 @@ export default function Watch() {
           <div className="text-center">
             <HeartPulse size={26} className="mx-auto text-red-400 animate-pulse" />
             <p className="mt-1 text-6xl font-black tabular-nums leading-none">{vitals.heartRate ?? '––'}</p>
-            <p className="mt-1 text-[11px] uppercase tracking-widest text-slate-400">bpm · NEWS2 {score.total ?? '–'}</p>
+            <p className="mt-1 text-[11px] uppercase tracking-widest text-gray-400">bpm · NEWS2 {score.total ?? '–'}</p>
           </div>
         </div>
 
@@ -135,8 +135,8 @@ export default function Watch() {
                style={{ background: risk.color, color: urgent ? '#fff' : '#08131f', boxShadow: `0 0 40px ${risk.glow}` }}>
             {alert && (alert.level === 'urgent' || alert.level === 'review') ? `${alert.level.toUpperCase()} ALERT` : risk.label}
           </div>
-          {alert && <p className="mt-2 line-clamp-2 text-center text-[11px] leading-snug text-slate-300">{alert.explanation}</p>}
-          <p className="mt-1 text-center text-[9px] uppercase tracking-widest text-slate-600">Clinical decision support — not a medical diagnosis</p>
+          {alert && <p className="mt-2 line-clamp-2 text-center text-[11px] leading-snug text-gray-300">{alert.explanation}</p>}
+          <p className="mt-1 text-center text-[9px] uppercase tracking-widest text-gray-600">Clinical decision support — not a medical diagnosis</p>
         </div>
       </div>
     </div>
@@ -146,8 +146,8 @@ export default function Watch() {
 function Vital({ label, value, unit, tone }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 px-2 py-3">
-      <p className="text-[10px] uppercase tracking-widest text-slate-400">{label}</p>
-      <p className={`mt-1 text-2xl font-bold tabular-nums ${tone === 'bad' ? 'text-red-400' : 'text-white'}`}>{value ?? '––'}<span className="text-xs font-medium text-slate-500"> {unit}</span></p>
+      <p className="text-[10px] uppercase tracking-widest text-gray-400">{label}</p>
+      <p className={`mt-1 text-2xl font-bold tabular-nums ${tone === 'bad' ? 'text-red-400' : 'text-white'}`}>{value ?? '––'}<span className="text-xs font-medium text-gray-500"> {unit}</span></p>
     </div>
   );
 }

@@ -25,15 +25,15 @@ export default function RiskAssessmentPage() {
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-gray-500">
             <tr><th className="py-2">NEWS2 total</th><th>Dashboard category</th><th>Clinical response (NEWS2)</th></tr>
           </thead>
           <tbody>
             {RULES.map(([score, cat, resp, color]) => (
-              <tr key={cat} className="border-t border-slate-100">
+              <tr key={cat} className="border-t border-gray-100">
                 <td className="py-2 font-semibold">{score}</td>
                 <td><span className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${color}`} />{cat}</td>
-                <td className="text-slate-600">{resp}</td>
+                <td className="text-gray-600">{resp}</td>
               </tr>
             ))}
           </tbody>
@@ -47,18 +47,18 @@ export default function RiskAssessmentPage() {
           <section key={level} className="card space-y-3">
             <div className="flex items-center gap-3">
               <RiskBadge level={level} />
-              <span className="text-sm text-slate-500">{items.length} patient(s)</span>
+              <span className="text-sm text-gray-500">{items.length} patient(s)</span>
             </div>
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-gray-100">
               {items.map((p) => (
                 <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <Link to={`/patients/${p.id}`} className="font-medium hover:underline">
-                    {p.fullName} <span className="text-xs text-slate-400">{p.id}</span>
+                    {p.fullName} <span className="text-xs text-gray-400">{p.id}</span>
                   </Link>
                   <span className="text-sm">
                     NEWS2 <b className="text-lg">{p.latest.total}</b>
                     {p.latest.escalation && <span className="ml-2 font-semibold text-yellow-700">Escalation alert</span>}
-                    <span className="ml-3 text-xs text-slate-500">{fmt(p.latest.measuredAt)}</span>
+                    <span className="ml-3 text-xs text-gray-500">{fmt(p.latest.measuredAt)}</span>
                   </span>
                 </li>
               ))}
@@ -68,7 +68,7 @@ export default function RiskAssessmentPage() {
       })}
 
       {unassessed.length > 0 && (
-        <div className="card text-sm text-slate-500">
+        <div className="card text-sm text-gray-500">
           Not yet assessed: {unassessed.map((p) => p.fullName).join(', ')}
         </div>
       )}

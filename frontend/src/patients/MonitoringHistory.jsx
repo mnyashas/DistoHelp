@@ -16,7 +16,7 @@ function Chart({ title, data, lines }) {
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 16, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#eaecf0" />
             <XAxis dataKey="t" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
             <Tooltip />
@@ -34,7 +34,7 @@ function Chart({ title, data, lines }) {
 
 export default function MonitoringHistory({ records = [], patientName = 'patient' }) {
   if (!records.length) {
-    return <p className="text-sm text-slate-500">No monitoring history yet. Save a vital-sign reading to start tracking.</p>;
+    return <p className="text-sm text-gray-500">No monitoring history yet. Save a vital-sign reading to start tracking.</p>;
   }
 
   const data = records.map((r) => ({
@@ -66,8 +66,8 @@ export default function MonitoringHistory({ records = [], patientName = 'patient
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Chart title="Heart rate (bpm)" data={data} lines={[{ key: 'hr', name: 'Heart rate', color: '#14b8a6' }]} />
-        <Chart title="Oxygen saturation (%)" data={data} lines={[{ key: 'spo2', name: 'SpO₂', color: '#0ea5e9' }]} />
+        <Chart title="Heart rate (bpm)" data={data} lines={[{ key: 'hr', name: 'Heart rate', color: '#465fff' }]} />
+        <Chart title="Oxygen saturation (%)" data={data} lines={[{ key: 'spo2', name: 'SpO₂', color: '#7592ff' }]} />
         <Chart title="Body temperature (°C)" data={data} lines={[{ key: 'temp', name: 'Temperature', color: '#f97316' }]} />
         <Chart title="Blood pressure (mmHg)" data={data} lines={[
           { key: 'sbp', name: 'Systolic', color: '#ef4444' },
@@ -77,7 +77,7 @@ export default function MonitoringHistory({ records = [], patientName = 'patient
 
       <div className="card overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-gray-500">
             <tr>
               <th className="py-2">Date & time</th><th>HR</th><th>SpO₂</th><th>Temp</th>
               <th>BP</th><th>NEWS2</th><th>Risk</th>
@@ -85,7 +85,7 @@ export default function MonitoringHistory({ records = [], patientName = 'patient
           </thead>
           <tbody>
             {[...records].reverse().map((r) => (
-              <tr key={r.id} className="border-t border-slate-100">
+              <tr key={r.id} className="border-t border-gray-100">
                 <td className="py-2">{fmt(r.measuredAt)}</td>
                 <td>{r.vitals.heartRate ?? '—'}</td>
                 <td>{r.vitals.spo2 ?? '—'}</td>
@@ -117,7 +117,7 @@ export function HistoryPage() {
         <h1 className="text-2xl font-bold">Monitoring History</h1>
         <PatientSelect value={id} onChange={setId} />
       </div>
-      {!id && <div className="card text-sm text-slate-500">Select a patient to view their history.</div>}
+      {!id && <div className="card text-sm text-gray-500">Select a patient to view their history.</div>}
       {patient && <MonitoringHistory records={patient.records} patientName={patient.fullName} />}
     </div>
   );

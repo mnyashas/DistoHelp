@@ -143,14 +143,14 @@ export default function Live() {
       {/* header bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <AudioLines className="text-teal-500" /> Live Monitoring
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+            <AudioLines className="text-brand-500" /> Live Monitoring
             <span className="ml-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
               <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
               ALWAYS ON
             </span>
           </h1>
-          <p className="text-sm text-slate-500">Real-time telemetry from wearables — artifact-filtered, personalized, explained · streams run continuously from server boot</p>
+          <p className="text-sm text-gray-500">Real-time telemetry from wearables — artifact-filtered, personalized, explained · streams run continuously from server boot</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {!running ? (
@@ -165,7 +165,7 @@ export default function Live() {
           <Link to="/watch?p=p02" className="btn-ghost">⌚ Watch mode</Link>
         </div>
       </div>
-      {bleStatus && <p className="text-xs text-slate-500">{bleStatus}</p>}
+      {bleStatus && <p className="text-xs text-gray-500">{bleStatus}</p>}
 
       {/* urgent banner */}
       {latestAlert && (latestAlert.level === 'urgent' || latestAlert.level === 'review') && (
@@ -176,8 +176,8 @@ export default function Live() {
               {latestAlert.level === 'urgent' ? '!' : '!'}
             </span>
             <div>
-              <p className="font-bold text-navy-900">{latestAlert.patient_name} — {latestAlert.level.toUpperCase()} alert · NEWS2 {latestAlert.score_total}</p>
-              <p className="text-xs text-slate-600 line-clamp-1">{latestAlert.explanation}</p>
+              <p className="font-bold text-gray-900">{latestAlert.patient_name} — {latestAlert.level.toUpperCase()} alert · NEWS2 {latestAlert.score_total}</p>
+              <p className="text-xs text-gray-600 line-clamp-1">{latestAlert.explanation}</p>
             </div>
           </div>
           <button className="btn-ghost bg-white" onClick={() => ack(latestAlert.id)}><Check size={16} /> Acknowledge</button>
@@ -194,13 +194,13 @@ export default function Live() {
           const lvl = levelOf(v);
           const hist = history[p.id] || [];
           const trend = hist.length >= 10 ? hist[hist.length - 1] - hist[hist.length - 10] : 0;
-          const ring = { none: 'border-slate-200', watch: 'border-yellow-300', review: 'border-orange-400', urgent: 'border-red-500 animate-pulse' }[lvl] || 'border-slate-200';
+          const ring = { none: 'border-gray-200', watch: 'border-yellow-300', review: 'border-orange-400', urgent: 'border-red-500 animate-pulse' }[lvl] || 'border-gray-200';
           return (
             <div key={p.id} className={`rounded-2xl border-2 ${ring} bg-white p-4 shadow-sm transition`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-navy-900">{p.fullName}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">{p.id} · {p.conditions[0] || 'Routine'}{v?.scale === 'scale2' ? ' · SpO₂ S2' : ''}</p>
+                  <p className="font-bold text-gray-900">{p.fullName}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{p.id} · {p.conditions[0] || 'Routine'}{v?.scale === 'scale2' ? ' · SpO₂ S2' : ''}</p>
                 </div>
                 <LevelChip level={lvl} total={v?.score} />
               </div>
@@ -215,8 +215,8 @@ export default function Live() {
               <div className="mt-3 flex items-center justify-between">
                 <Spark data={hist} level={lvl} />
                 <div className="flex flex-col items-end">
-                  {trend > 0 ? <TrendingUp size={18} className="text-red-500" /> : trend < 0 ? <TrendingDown size={18} className="text-emerald-500" /> : <Minus size={18} className="text-slate-400" />}
-                  <span className="text-[10px] text-slate-400">{trend > 0 ? 'drifting up' : trend < 0 ? 'improving' : 'steady'}</span>
+                  {trend > 0 ? <TrendingUp size={18} className="text-red-500" /> : trend < 0 ? <TrendingDown size={18} className="text-emerald-500" /> : <Minus size={18} className="text-gray-400" />}
+                  <span className="text-[10px] text-gray-400">{trend > 0 ? 'drifting up' : trend < 0 ? 'improving' : 'steady'}</span>
                 </div>
               </div>
             </div>
@@ -226,16 +226,16 @@ export default function Live() {
 
       {/* alerts feed */}
       <div className="card">
-        <h2 className="mb-3 flex items-center gap-2 font-bold"><Activity size={18} className="text-teal-500" /> Live alert stream</h2>
+        <h2 className="mb-3 flex items-center gap-2 font-bold"><Activity size={18} className="text-brand-500" /> Live alert stream</h2>
         {alertsFeed.length === 0 ? (
-          <p className="text-sm text-slate-500">No alerts yet — start the demo streams and watch them arrive in real time.</p>
+          <p className="text-sm text-gray-500">No alerts yet — start the demo streams and watch them arrive in real time.</p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-gray-100">
             {alertsFeed.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-sm">
                 <div className="flex items-center gap-3 min-w-0">
                   <LevelChip level={a.level} total={a.score_total} />
-                  <span className="truncate font-medium text-slate-700">{a.patient_name} — {a.explanation}</span>
+                  <span className="truncate font-medium text-gray-700">{a.patient_name} — {a.explanation}</span>
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <button className="btn-ghost !px-2 !py-1 text-xs" onClick={() => ack(a.id)} title="Acknowledge"><Check size={14} /></button>
@@ -264,16 +264,16 @@ function LevelChip({ level, total }) {
 
 function Cell({ label, value, unit, alert }) {
   return (
-    <div className={`rounded-xl border p-2 ${alert ? 'border-red-300 bg-red-50' : 'border-slate-100 bg-slate-50'}`}>
-      <p className="text-[10px] font-semibold uppercase text-slate-500">{label}</p>
-      <p className={`text-xl font-extrabold tabular-nums leading-tight ${alert ? 'text-red-600' : 'text-navy-900'}`}>{value ?? '––'}</p>
-      <p className="text-[9px] text-slate-400">{unit}</p>
+    <div className={`rounded-xl border p-2 ${alert ? 'border-red-300 bg-red-50' : 'border-gray-100 bg-gray-50'}`}>
+      <p className="text-[10px] font-semibold uppercase text-gray-500">{label}</p>
+      <p className={`text-xl font-extrabold tabular-nums leading-tight ${alert ? 'text-red-600' : 'text-gray-900'}`}>{value ?? '––'}</p>
+      <p className="text-[9px] text-gray-400">{unit}</p>
     </div>
   );
 }
 
 function Spark({ data, level }) {
-  if (data.length < 2) return <div className="h-10 w-36 rounded bg-slate-50" />;
+  if (data.length < 2) return <div className="h-10 w-36 rounded bg-gray-50" />;
   const w = 150, h = 40, max = 14;
   const pts = data.map((v, i) => {
     const x = (i / (data.length - 1)) * w;
@@ -311,14 +311,14 @@ function LiveWaveforms({ wave, patients, selected, onSelect }) {
   return (
     <div className="card">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 font-bold"><HeartPulse className="text-teal-500" size={18} /> Live waveforms
-          <span className="text-xs font-normal text-slate-400">smoothed trend by default</span>
+        <h2 className="flex items-center gap-2 font-bold"><HeartPulse className="text-brand-500" size={18} /> Live waveforms
+          <span className="text-xs font-normal text-gray-400">smoothed trend by default</span>
         </h2>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex rounded-xl bg-slate-100 p-1">
+          <div className="flex rounded-xl bg-gray-100 p-1">
             {['trend', 'raw'].map((m) => (
               <button key={m} onClick={() => setMode(m)}
-                className={`rounded-lg px-3 py-1 text-xs font-semibold capitalize transition ${mode === m ? 'bg-white text-navy-900 shadow' : 'text-slate-500'}`}>
+                className={`rounded-lg px-3 py-1 text-xs font-semibold capitalize transition ${mode === m ? 'bg-white text-gray-900 shadow' : 'text-gray-500'}`}>
                 {m === 'trend' ? 'Trend (SMA-5)' : 'Raw'}
               </button>
             ))}
@@ -326,7 +326,7 @@ function LiveWaveforms({ wave, patients, selected, onSelect }) {
           <div className="flex flex-wrap gap-2">
           {patients.map((pt) => (
             <button key={pt.id} onClick={() => onSelect(pt.id)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${selected === pt.id ? 'bg-navy-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${selected === pt.id ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
               {pt.id} — {pt.fullName.split(' ')[0]}
             </button>
           ))}
@@ -336,12 +336,12 @@ function LiveWaveforms({ wave, patients, selected, onSelect }) {
 
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
             {p?.fullName} — HR / SpO₂ / RR (live)
           </p>
           <div className="h-64">
             {data.length < 2 ? (
-              <div className="grid h-full place-items-center text-sm text-slate-400">Waiting for stream…</div>
+              <div className="grid h-full place-items-center text-sm text-gray-400">Waiting for stream…</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
@@ -360,10 +360,10 @@ function LiveWaveforms({ wave, patients, selected, onSelect }) {
           </div>
         </div>
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">NEWS2 trajectory (live)</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">NEWS2 trajectory (live)</p>
           <div className="h-64">
             {data.length < 2 ? (
-              <div className="grid h-full place-items-center text-sm text-slate-400">Waiting for stream…</div>
+              <div className="grid h-full place-items-center text-sm text-gray-400">Waiting for stream…</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
