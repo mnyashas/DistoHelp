@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, AudioLines, Play, Square, TrendingDown, TrendingUp, Minus, Check, X, Volume2, VolumeX, Bluetooth } from 'lucide-react';
+import { Activity, AudioLines, Play, Square, TrendingDown, TrendingUp, Minus, Check, X, Volume2, VolumeX, Bluetooth, HeartPulse } from 'lucide-react';
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend, ReferenceLine,
+} from 'recharts';
 import { api } from '../services/api.js';
 import { RISK, Spinner } from '../components/ui.jsx';
 import { fmt } from '../services/format.js';
@@ -12,9 +15,11 @@ export default function Live() {
   const [patients, setPatients] = useState([]);
   const [vitals, setVitals] = useState({});
   const [history, setHistory] = useState({});
+  const [wave, setWave] = useState({});          // time-series points per patient (for charts)
+  const [chartPid, setChartPid] = useState('p02');
   const [alertsFeed, setAlertsFeed] = useState([]);
   const [latestAlert, setLatestAlert] = useState(null);
-  const [running, setRunning] = useState(false);
+  const [running, setRunning] = useState(true);
   const [sound, setSound] = useState(true);
   const [bleStatus, setBleStatus] = useState('');
   const audioCtx = useRef(null);
@@ -50,6 +55,18 @@ export default function Live() {
               const s = d.score?.total ?? 0;
               const arr = [...(h[d.patient_id] || []), s].slice(-40);
               return { ...h, [d.patient_id]: arr };
+            });
+            setWave((w) => {
+              const t = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              const arr = [...(w[d.patient_id] || [])];
+              const key = LOINC_KEY[d.loinc];
+              const last = arr[arr.length - 1];
+              if (last && last.t === t) {
+                arr[arr.length - 1] = { ...last, [key]: d.value, score: d.score?.total ?? last.score };
+              } else {
+                arr.push({ t, [key]: d.value, score: d.score?.total ?? 0 });
+              }
+              return { ...w, [d.patient_id]: arr.slice(-120) };
             });
           } else if (msg.type === 'alert') {
             const a = msg.data;
@@ -126,12 +143,18 @@ export default function Live() {
       {/* header bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold"><AudioLines className="text-teal-500" /> Live Monitoring</h1>
-          <p className="text-sm text-slate-500">Real-time telemetry from wearables — artifact-filtered, personalized, explained</p>
+          <h1 className="flex items-center gap-2 text-2xl font-bold">
+            <AudioLines className="text-teal-500" /> Live Monitoring
+            <span className="ml-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              ALWAYS ON
+            </span>
+          </h1>
+          <p className="text-sm text-slate-500">Real-time telemetry from wearables — artifact-filtered, personalized, explained · streams run continuously from server boot</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {!running ? (
-            <button className="btn-primary" onClick={startDemo}><Play size={16} /> Start demo streams</button>
+            <button className="btn-primary" onClick={startDemo}><Play size={16} /> Boost streams</button>
           ) : (
             <button className="btn-primary !from-red-500 !to-rose-500" onClick={stopDemo}><Square size={16} /> Stop streams</button>
           )}
@@ -160,6 +183,9 @@ export default function Live() {
           <button className="btn-ghost bg-white" onClick={() => ack(latestAlert.id)}><Check size={16} /> Acknowledge</button>
         </div>
       )}
+
+      {/* live waveforms */}
+      <LiveWaveforms wave={wave} patients={patients} selected={chartPid} onSelect={setChartPid} />
 
       {/* patient telemetry grid */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -260,5 +286,72 @@ function Spark({ data, level }) {
       <polyline points={pts} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       <circle cx={w} cy={h - (Math.min(data[data.length - 1], max) / max) * (h - 4) - 2} r="3.5" fill={color} />
     </svg>
+  );
+}
+
+function LiveWaveforms({ wave, patients, selected, onSelect }) {
+  const data = wave[selected] || [];
+  const p = patients.find((x) => x.id === selected);
+  return (
+    <div className="card">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 font-bold"><HeartPulse className="text-teal-500" size={18} /> Live waveforms</h2>
+        <div className="flex flex-wrap gap-2">
+          {patients.map((pt) => (
+            <button key={pt.id} onClick={() => onSelect(pt.id)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${selected === pt.id ? 'bg-navy-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              {pt.id} — {pt.fullName.split(' ')[0]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {p?.fullName} — HR / SpO₂ / RR (live)
+          </p>
+          <div className="h-64">
+            {data.length < 2 ? (
+              <div className="grid h-full place-items-center text-sm text-slate-400">Waiting for stream…</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="t" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                  <YAxis yAxisId="l" domain={['dataMin - 5', 'dataMax + 5']} tick={{ fontSize: 11 }} />
+                  <YAxis yAxisId="r" orientation="right" domain={[80, 100]} tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2.2} dot={false} isAnimationActive={false} />
+                  <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={1.8} dot={false} strokeDasharray="5 3" isAnimationActive={false} />
+                  <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2.2} dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+        <div>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">NEWS2 trajectory (live)</p>
+          <div className="h-64">
+            {data.length < 2 ? (
+              <div className="grid h-full place-items-center text-sm text-slate-400">Waiting for stream…</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="t" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                  <YAxis domain={[0, 14]} tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <ReferenceLine y={5} stroke="#f97316" strokeDasharray="4 4" label={{ value: 'Review', fontSize: 10, fill: '#f97316' }} />
+                  <ReferenceLine y={7} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Urgent', fontSize: 10, fill: '#ef4444' }} />
+                  <Line type="monotone" dataKey="score" name="NEWS2" stroke="#7c3aed" strokeWidth={2.4} dot={false} isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

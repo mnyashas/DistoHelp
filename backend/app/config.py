@@ -15,6 +15,9 @@ BIDMC_SAMPLE = BASE_DIR.parent / "data" / "bidmc_sample" / "bidmc_demo_Numerics.
 SIM_MINUTES_PER_TICK = float(os.getenv("SIM_MINUTES_PER_TICK", "1"))
 # Alert de-dup: identical (patient, level, rule) within this window is suppressed.
 ALERT_DEDUP_MINUTES = float(os.getenv("ALERT_DEDUP_MINUTES", "10"))
+# Always-on monitoring streams (start simulator for every patient at boot)
+AUTO_STREAM = os.getenv("DEMO_AUTOSTREAM", "1") == "1"
+AUTO_STREAM_RATE = float(os.getenv("DEMO_AUTOSTREAM_RATE", "20"))  # readings per minute per patient
 # Missing-data threshold: device silent this long -> missing-data alert.
 MISSING_DATA_MINUTES = float(os.getenv("MISSING_DATA_MINUTES", "10"))
 # Optional webhook for escalations (e.g. Twilio/MSG91 relay). Empty = log+store only.

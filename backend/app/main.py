@@ -19,6 +19,23 @@ async def lifespan(app: FastAPI):
     seed.seed(post_to_hapi=True)
     ws.manager._loop = asyncio.get_event_loop()
 
+    if config.AUTO_STREAM:
+        from . import simulator
+        # always-on monitoring: one stream per patient, clinically distinct scenarios
+        streams = {
+            "p01": "stable_recovery",   # COPD, SpO2 Scale 2 target — stable
+            "p02": "slow_deterioration",  # the deterioration watch case
+            "p03": "stable_recovery",   # T2DM + CKD — stable
+            "p04": "probe_removal",     # post-op — frequent artifact test episodes
+            "p05": "stable_recovery",   # asthma — stable
+        }
+        for pid, scenario in streams.items():
+            try:
+                simulator.start(pid, scenario, config.AUTO_STREAM_RATE, seed=abs(hash(pid)) % 10_000)
+            except Exception as e:
+                print(f"[autostream] {pid}: {e}")
+        print(f"[autostream] always-on monitoring live for {len(streams)} patients @ {config.AUTO_STREAM_RATE} readings/min")
+
     async def missing_data_watchdog():
         while True:
             await asyncio.sleep(60)
