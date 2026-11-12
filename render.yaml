@@ -27,7 +27,8 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
 
-  - type: static
+  - type: web
+    runtime: static
     name: distohelp-ps03-ui
     branch: main
     rootDir: frontend
