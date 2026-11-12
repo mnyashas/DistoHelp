@@ -289,20 +289,48 @@ function Spark({ data, level }) {
   );
 }
 
+function smoothSeries(arr, keys, window_ = 5) {
+  // centered moving average — the "trend" clinicians read at the bedside
+  return arr.map((p, i) => {
+    const from = Math.max(0, i - window_ + 1);
+    const slice = arr.slice(from, i + 1).filter(Boolean);
+    const out = { ...p };
+    for (const k of keys) {
+      const vals = slice.map((q) => q[k]).filter((v) => v != null);
+      out[k + 'Trend'] = vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : null;
+    }
+    return out;
+  });
+}
+
 function LiveWaveforms({ wave, patients, selected, onSelect }) {
-  const data = wave[selected] || [];
+  const raw = wave[selected] || [];
+  const [mode, setMode] = useState('trend');
+  const data = mode === 'trend' ? smoothSeries(raw, ['hr', 'spo2', 'rr', 'temp', 'score'], 5) : raw;
   const p = patients.find((x) => x.id === selected);
   return (
     <div className="card">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 font-bold"><HeartPulse className="text-teal-500" size={18} /> Live waveforms</h2>
-        <div className="flex flex-wrap gap-2">
+        <h2 className="flex items-center gap-2 font-bold"><HeartPulse className="text-teal-500" size={18} /> Live waveforms
+          <span className="text-xs font-normal text-slate-400">smoothed trend by default</span>
+        </h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex rounded-xl bg-slate-100 p-1">
+            {['trend', 'raw'].map((m) => (
+              <button key={m} onClick={() => setMode(m)}
+                className={`rounded-lg px-3 py-1 text-xs font-semibold capitalize transition ${mode === m ? 'bg-white text-navy-900 shadow' : 'text-slate-500'}`}>
+                {m === 'trend' ? 'Trend (SMA-5)' : 'Raw'}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
           {patients.map((pt) => (
             <button key={pt.id} onClick={() => onSelect(pt.id)}
               className={`rounded-full px-3 py-1 text-xs font-semibold transition ${selected === pt.id ? 'bg-navy-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
               {pt.id} — {pt.fullName.split(' ')[0]}
             </button>
           ))}
+        </div>
         </div>
       </div>
 
@@ -319,13 +347,13 @@ function LiveWaveforms({ wave, patients, selected, onSelect }) {
                 <LineChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="t" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                  <YAxis yAxisId="l" domain={['dataMin - 5', 'dataMax + 5']} tick={{ fontSize: 11 }} />
-                  <YAxis yAxisId="r" orientation="right" domain={[80, 100]} tick={{ fontSize: 11 }} />
+                  <YAxis yAxisId="l" domain={['dataMin - 10', 'dataMax + 10']} tick={{ fontSize: 11 }} />
+                  <YAxis yAxisId="r" orientation="right" domain={[85, 100]} tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend />
-                  <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2.2} dot={false} isAnimationActive={false} />
-                  <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={1.8} dot={false} strokeDasharray="5 3" isAnimationActive={false} />
-                  <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2.2} dot={false} isAnimationActive={false} />
+                  <Line yAxisId="l" type="monotone" dataKey={mode === 'trend' ? 'hrTrend' : 'hr'} name="HR bpm" stroke="#0f766e" strokeWidth={2.4} dot={false} isAnimationActive={false} />
+                  <Line yAxisId="l" type="monotone" dataKey={mode === 'trend' ? 'rrTrend' : 'rr'} name="RR /min" stroke="#f97316" strokeWidth={1.8} dot={false} strokeDasharray="5 3" isAnimationActive={false} />
+                  <Line yAxisId="r" type="monotone" dataKey={mode === 'trend' ? 'spo2Trend' : 'spo2'} name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2.4} dot={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -345,7 +373,7 @@ function LiveWaveforms({ wave, patients, selected, onSelect }) {
                   <Tooltip />
                   <ReferenceLine y={5} stroke="#f97316" strokeDasharray="4 4" label={{ value: 'Review', fontSize: 10, fill: '#f97316' }} />
                   <ReferenceLine y={7} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Urgent', fontSize: 10, fill: '#ef4444' }} />
-                  <Line type="monotone" dataKey="score" name="NEWS2" stroke="#7c3aed" strokeWidth={2.4} dot={false} isAnimationActive={false} />
+                  <Line type="monotone" dataKey={mode === 'trend' ? 'scoreTrend' : 'score'} name="NEWS2" stroke="#7c3aed" strokeWidth={2.4} dot={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             )}
