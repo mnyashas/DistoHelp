@@ -136,13 +136,13 @@ export default function Login() {
                       value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} required />
                   </div>
                   <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
-                    <p className="mb-1.5 font-semibold text-slate-600">Demo patient numbers (Synthea-generated cohort):</p>
+                    <p className="mb-1.5 font-semibold text-slate-600">Any registered patient can sign in — the Synthea cohort:</p>
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                       {PATIENT_HINTS.map(([name, num]) => (
                         <p key={num}><span className="text-slate-400">{name}:</span> <b className="text-navy-800">{num}</b></p>
                       ))}
                     </div>
-                    <p className="mt-2">OTP: <b>123456</b></p>
+                    <p className="mt-2"><b>New patients you add work too</b> — they sign in with the phone you registered them with (give it 10 digits). OTP: <b>123456</b> for everyone.</p>
                   </div>
                 </>
               )}
