@@ -12,11 +12,15 @@ Your laptop stays the server (backend + HAPI + always-on demo streams). Cloudfla
 #    Terminal 2: cd frontend; npm run dev -- --host        # http://10.57.20.137:5173
 
 # 2. Start a quick tunnel (no account, no signup, no config):
-.\scripts\cloudflared\cloudflared.exe tunnel --url http://localhost:5173
+# NOTE: if your network blocks QUIC/UDP 443, force HTTP/2 instead:
+.\scripts\cloudflared\cloudflared.exe tunnel --url http://localhost:5173 --no-autoupdate --protocol http2
 
 # Output ends with something like:
-#   https://happy-panda-123.trycloudflare.com
+#   https://something.trycloudflare.com
 # That is your public URL — share it with judges. Phone-as-wearable works through it too.
+
+# A working example from this machine:
+#   https://invalid-explains-ends-possibility.trycloudflare.com   <- changes on restart
 ```
 
 - The Vite dev server proxies `/api` and `/ws` to `localhost:8000`, so the public URL serves **everything** — dashboard, watch kiosk, patient portal (`/me`).
