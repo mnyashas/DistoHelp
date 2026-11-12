@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import api, config, db, seed, ws
+from . import api, compat, config, db, seed, ws
 from .ws import router as ws_router
 
 
@@ -54,6 +54,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(compat.router)  # frontend dialect (/auth, /patients frontend-shape, /sensors...)
 app.include_router(api.router)
 app.include_router(ws_router)
 

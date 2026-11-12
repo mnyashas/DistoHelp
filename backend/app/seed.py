@@ -12,6 +12,7 @@ from . import config, db, fhir_client
 PATIENTS = [
     {
         "id": "p01", "name": "Ramesh Hegde", "age": 68, "gender": "male", "dob": "1958-04-12",
+        "phone": "98450 01001", "address": "12, 3rd Cross, Kumbar Lane, Davangere 577002",
         "conditions": [
             {"code": "13645005", "display": "Chronic obstructive pulmonary disease", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
             {"code": "42343007", "display": "Hypercapnia (elevated arterial CO2)", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
@@ -26,6 +27,7 @@ PATIENTS = [
     },
     {
         "id": "p02", "name": "Lakshmi Rao", "age": 72, "gender": "female", "dob": "1954-09-30",
+        "phone": "98450 02002", "address": "45, Jayadeva Nagar, Davangere 577004",
         "conditions": [
             {"code": "84114007", "display": "Heart failure", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
             {"code": "38341003", "display": "Hypertension", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
@@ -39,6 +41,7 @@ PATIENTS = [
     },
     {
         "id": "p03", "name": "Ananda Kumar", "age": 59, "gender": "male", "dob": "1967-02-18",
+        "phone": "98450 03003", "address": "7, Vinoba Nagar, MCC Extension, Davangere 577005",
         "conditions": [
             {"code": "44054006", "display": "Type 2 diabetes mellitus", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
             {"code": "709044004", "display": "Chronic kidney disease, stage 3", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
@@ -52,6 +55,7 @@ PATIENTS = [
     },
     {
         "id": "p04", "name": "Suresh Gowda", "age": 77, "gender": "male", "dob": "1949-07-25",
+        "phone": "98450 04004", "address": "22, Ramalayam Road, Davangere 577001",
         "conditions": [
             {"code": "609588000", "display": "Total knee replacement (post-op)", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
             {"code": "38341003", "display": "Hypertension", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
@@ -66,6 +70,7 @@ PATIENTS = [
     },
     {
         "id": "p05", "name": "Priya Nair", "age": 64, "gender": "female", "dob": "1962-11-08",
+        "phone": "98450 05005", "address": "88, Puneeth Rajkumar Layout, Davangere 577008",
         "conditions": [
             {"code": "44054006", "display": "Type 2 diabetes mellitus", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
             {"code": "38341003", "display": "Hypertension", "clinicalStatus": "active", "system": "http://snomed.info/sct"},
@@ -126,11 +131,20 @@ def seed(post_to_hapi: bool = True) -> list[str]:
                         "subject": {"reference": fhir_ref},
                     })
         db.execute(
-            "INSERT INTO patients(id,name,age,gender,dob,fhir_ref,conditions,medications,risk_flags,created_at) "
-            "VALUES(?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO patients(id,name,age,gender,dob,fhir_ref,conditions,medications,risk_flags,"
+            "phone,address,medical_history,registered_on,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (p["id"], p["name"], p["age"], p["gender"], p["dob"], fhir_ref,
-             db.dumps(p["conditions"]), db.dumps(p["medications"]), db.dumps(p["risk_flags"]), db.now_iso()),
+             db.dumps(p["conditions"]), db.dumps(p["medications"]), db.dumps(p["risk_flags"]),
+             p.get("phone"), p.get("address"), p.get("discharge_note"),
+             _weeks_ago(10), db.now_iso()),
         )
         seeded.append(p["id"])
     db.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('patients_seeded',?)", ("yes",))
+    from .seed_demo import seed_monitoring
+    seed_monitoring()
     return seeded
+
+
+def _weeks_ago(weeks: int) -> str:
+    from datetime import datetime, timedelta, timezone
+    return (datetime.now(timezone.utc) - timedelta(weeks=weeks)).date().isoformat()

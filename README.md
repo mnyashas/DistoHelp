@@ -10,16 +10,16 @@ and a clinician dashboard.
 
 > **Clinical decision support only — NOT a medical diagnosis system.**
 
-## Repository layout (2-laptop hackathon build)
+## Repository layout (2-laptop build, merged)
 
 | Folder | Owner | Purpose |
 |---|---|---|
-| `backend/` | Backend agent | FastAPI + SQLite read-model + HAPI FHIR client |
-| `frontend/` | Frontend agent | Clinician dashboard + patient check-in app |
-| `contract/` | Both (frozen) | `openapi.yaml`, `WEBSOCKET.md`, example payloads |
+| `backend/` | Backend agent | FastAPI + SQLite read-model + HAPI FHIR client + frontend compat layer |
+| `frontend/` | Frontend agent | React app ("Smart Patient Monitoring & Early Warning System") |
+| `contract/` | Both (frozen) | `openapi.yaml`, `WEBSOCKET.md`, `COMPAT.md` |
 | `AGENTS.md` | Both | Scope + golden rules |
-| `docker-compose.yml` | Backend | HAPI FHIR R4 (or `scripts/run_hapi_cli.ps1` w/o Docker) |
-| `scripts/` | Backend | HAPI CLI runner, BIDMC downloader, Synthea regeneration |
+| `docker-compose.yml` | Backend | HAPI FHIR R4 (preferred) |
+| `scripts/` | Backend | BIDMC downloader, Synthea regeneration, public-sandbox runner |
 | `data/bidmc_sample/` | Backend | Bundled 90-min BIDMC-format demo record (offline replay) |
 
 ## Quick start (backend laptop)
@@ -49,14 +49,22 @@ scripts\generate_synthea.ps1    # regenerate profiles with real Synthea
 
 Tests: `cd backend; python -m pytest -q`
 
-## Quick start (frontend laptop)
+## Run the whole demo (one laptop)
 
-```bash
-git clone <repo-url>; cd DIstoHelp/frontend
-echo "VITE_API_URL=http://<backend-laptop-ip>:8000" > .env
-npm create vite@latest . -- --template react-ts && npm install && npm run dev
+```powershell
+# Terminal 1 — backend (HAPI FHIR: docker compose up -d, or nothing for SQLite-only demo)
+cd backend; python -m venv .venv; .\.venv\Scripts\activate; pip install -r requirements.txt
+uvicorn app.main:app --port 8000
+
+# Terminal 2 — frontend
+cd frontend; npm install; npm run dev    # http://localhost:5173
 ```
-See `frontend/FRONTEND_BRIEF.md`. Contract is the source of truth.
+
+Sign in with the demo account (Aadhaar `999941057058`, mobile `9876543210`, OTP `123456`).
+See `frontend/README.md` for screens and the demo storyline. The frontend talks to the backend
+through the Vite proxy (`/api` → `:8000`) via the compatibility layer in `backend/app/compat.py`;
+PS-03 contract endpoints remain available alongside it. Frontend ↔ backend link verified:
+HTML served at :5173, proxied `/api/patients` returns the 5 seeded patients.
 
 ## Demo script (5 minutes)
 

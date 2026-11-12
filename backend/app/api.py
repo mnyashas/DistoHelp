@@ -76,22 +76,7 @@ def dashboard():
             "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
 
-# ---------- patients ----------
-@router.get("/patients")
-def list_patients():
-    return {"patients": [_patient_or_404(r["id"]) for r in db.query("SELECT id FROM patients ORDER BY id")]}
-
-
-@router.get("/patients/{patient_id}")
-def get_patient(patient_id: str):
-    p = _patient_or_404(patient_id)
-    p["latest_score"] = scoring.compute_score(patient_id)
-    p["recent_alerts"] = alerts.list_alerts(patient_id=patient_id, limit=5)
-    p["active_device_events"] = db.query(
-        "SELECT * FROM device_events WHERE patient_id=? ORDER BY id DESC LIMIT 5", (patient_id,))
-    return p
-
-
+# ---------- patients (list/detail live in app/compat.py — frontend-shaped supersets) ----------
 @router.get("/patients/{patient_id}/vitals")
 def patient_vitals(patient_id: str, limit: int = 240):
     _patient_or_404(patient_id)

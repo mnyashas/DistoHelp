@@ -19,6 +19,10 @@ ALERT_DEDUP_MINUTES = float(os.getenv("ALERT_DEDUP_MINUTES", "10"))
 MISSING_DATA_MINUTES = float(os.getenv("MISSING_DATA_MINUTES", "10"))
 # Optional webhook for escalations (e.g. Twilio/MSG91 relay). Empty = log+store only.
 ESCALATION_WEBHOOK_URL = os.getenv("ESCALATION_WEBHOOK_URL", "")
+# Demo OTP for the frontend's simulated Aadhaar login. Change for real SMS relay.
+DEMO_OTP = os.getenv("DEMO_OTP", "123456")
+# Shared secret for ESP32 devices posting to /api/sensors/readings (x-device-key)
+DEVICE_KEY = os.getenv("DEVICE_KEY", "demo-esp32-key")
 
 DISCLAIMER = (
     "Clinical decision support only — this system is NOT a medical diagnosis system. "

@@ -31,6 +31,10 @@ CREATE TABLE IF NOT EXISTS patients (
   conditions TEXT NOT NULL DEFAULT '[]',   -- JSON [{code,display,clinicalStatus}]
   medications TEXT NOT NULL DEFAULT '[]',  -- JSON [{code,display,beta_blocker}]
   risk_flags TEXT NOT NULL DEFAULT '{}',   -- JSON {hypercapnia: bool, beta_blocker: bool, on_oxygen: bool}
+  phone TEXT,
+  address TEXT,
+  medical_history TEXT,
+  registered_on TEXT,
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS observations (
@@ -116,11 +120,60 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS monitoring_records (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual',   -- manual | simulated | esp32 | bidmc
+  measured_at TEXT NOT NULL,
+  vitals TEXT NOT NULL,                    -- JSON incl. height/weight/bmi/systolic/diastolic/onOxygen/consciousness
+  news2 TEXT NOT NULL,                     -- JSON {total, complete, escalation, items, risk}
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_records_patient ON monitoring_records(patient_id, id);
+CREATE TABLE IF NOT EXISTS enquiries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id TEXT NOT NULL,
+  main_complaint TEXT NOT NULL,
+  symptoms TEXT,
+  duration TEXT,
+  pain_description TEXT,
+  existing_conditions TEXT,
+  current_medications TEXT,
+  allergies TEXT,
+  additional_observations TEXT,
+  staff_remarks TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sensor_readings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id TEXT NOT NULL,
+  device_key TEXT,
+  read_at TEXT NOT NULL,
+  vitals TEXT NOT NULL,                  -- JSON
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS auth_tokens (
+  token TEXT PRIMARY KEY,
+  aadhaar TEXT NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
 """
+
+def _migrate(conn) -> None:
+    """Idempotent column additions for DBs created before these columns existed."""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(patients)").fetchall()}
+    for col, decl in (("phone", "TEXT"), ("address", "TEXT"),
+                      ("medical_history", "TEXT"), ("registered_on", "TEXT")):
+        if col not in cols:
+            conn.execute(f"ALTER TABLE patients ADD COLUMN {col} {decl}")
+
 
 def init_db() -> None:
     with _lock, get_conn() as conn:
         conn.executescript(SCHEMA)
+        _migrate(conn)
 
 def execute(sql: str, params: tuple = ()) -> sqlite3.Cursor:
     with _lock, get_conn() as conn:
