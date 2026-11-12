@@ -11,6 +11,7 @@ import { api } from '../services/api.js';
 import { RISK, Spinner } from '../components/ui.jsx';
 import { CameraPpg } from '../sensors/cameraPpg.js';
 import { connectBLE } from '../sensors/ble.js';
+import { PanicButton, EmergencyContacts } from '../components/PanicButton.jsx';
 
 const QUESTIONS = [
   { key: 'breathlessness', label: 'Breathlessness', options: [['None', 0], ['Mild', 1], ['Severe', 2]] },
@@ -186,6 +187,18 @@ function Report({ token, onLogout }) {
               Latest reading {new Date(latest.measuredAt).toLocaleString('en-IN')} · source: {latest.source} · {risk.clinical}
             </p>
           )}
+        </section>
+
+        {/* manage own emergency contacts (real SMS targets) */}
+        <div className="print:hidden">
+          <EmergencyContacts patientId={p.id} patientName={p.fullName} />
+        </div>
+
+        {/* panic — always visible to the patient */}
+        <section className="card print:hidden border-2 border-red-200">
+          <h2 className="mb-1 flex items-center gap-2 font-bold text-red-700">In an emergency</h2>
+          <p className="mb-2 text-xs text-gray-500">Press only if you need urgent help at home. This instantly alerts your care team and texts every emergency contact on file.</p>
+          <PanicButton big patientId={p.id} patientName={p.fullName} />
         </section>
 
         {/* vitals trend */}

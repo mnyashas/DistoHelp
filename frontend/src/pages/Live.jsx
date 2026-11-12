@@ -8,6 +8,7 @@ import { api } from '../services/api.js';
 import { RISK, Spinner } from '../components/ui.jsx';
 import { fmt } from '../services/format.js';
 import { connectBLE } from '../sensors/ble.js';
+import { PanicButton, EmergencyContacts } from '../components/PanicButton.jsx';
 
 const LOINC_KEY = { '8867-4': 'hr', '2708-6': 'spo2', '9279-1': 'rr', '8310-5': 'temp' };
 const WS_PATH = '/ws/live';
@@ -222,17 +223,21 @@ export default function Live() {
                 <Cell label="Temp" value={v?.temp != null ? Number(v.temp).toFixed(1) : null} unit="°C" />
               </div>
 
-              <div className="mt-3 flex items-center justify-between">
+              <div className="mt-3 flex items-center justify-between gap-2">
                 <Spark data={hist} level={lvl} />
                 <div className="flex flex-col items-end">
                   {trend > 0 ? <TrendingUp size={18} className="text-red-500" /> : trend < 0 ? <TrendingDown size={18} className="text-emerald-500" /> : <Minus size={18} className="text-gray-400" />}
                   <span className="text-[10px] text-gray-400">{trend > 0 ? 'drifting up' : trend < 0 ? 'improving' : 'steady'}</span>
                 </div>
               </div>
+              <PanicButton patientId={p.id} patientName={p.fullName} />
             </div>
           );
         })}
       </div>
+
+      {/* emergency contacts manager */}
+      <ContactsManager patients={patients} />
 
       {/* alerts feed */}
       <div className="card">
@@ -257,6 +262,28 @@ export default function Live() {
         )}
       </div>
     </div>
+  );
+}
+
+function ContactsManager({ patients }) {
+  const [pid, setPid] = useState(patients[0]?.id || '');
+  useEffect(() => { if (!pid && patients.length) setPid(patients[0].id); }, [patients, pid]);
+  const patient = patients.find((p) => p.id === pid);
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">Manage contacts for</span>
+        <div className="flex flex-wrap gap-1.5">
+          {patients.map((p) => (
+            <button key={p.id} onClick={() => setPid(p.id)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${pid === p.id ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+              {p.fullName}
+            </button>
+          ))}
+        </div>
+      </div>
+      {pid && <EmergencyContacts patientId={pid} patientName={patient?.fullName} />}
+    </section>
   );
 }
 

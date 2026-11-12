@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from . import (alerts, artifacts, bidmc, config, constants, db, escalation,
-               fhir_client, pipeline, scenarios, scoring, seed, simulator, sim_engine)
+               fhir_client, notify, pipeline, scenarios, scoring, seed, simulator, sim_engine)
 
 router = APIRouter(prefix="/api")
 
@@ -350,3 +350,119 @@ def latest_report():
         return {"report_markdown": None, "hint": "POST /api/scenarios/evaluate first"}
     return {"report_markdown": row["report_md"], "aggregate": db.loads(row["summary"]),
             "created_at": row["created_at"]}
+
+
+# ---------- emergency contacts + panic ----------
+class ContactIn(BaseModel):
+    patient_id: str
+    name: str = Field(..., min_length=1)
+    relation: str = "family"          # spouse | parent | child | friend | doctor | caregiver | family
+    phone: str = Field(..., min_length=8, max_length=20)
+    via: str = "auto"                 # auto | textbelt | telegram | msg91 | twilio
+
+
+class ContactPatch(BaseModel):
+    name: Optional[str] = None
+    relation: Optional[str] = None
+    phone: Optional[str] = None
+    via: Optional[str] = None
+    active: Optional[int] = None
+
+
+@router.get("/emergency-contacts")
+def list_contacts(patient_id: Optional[str] = None):
+    if patient_id:
+        rows = db.query("SELECT * FROM emergency_contacts WHERE patient_id=? AND active=1 ORDER BY id",
+                        (patient_id,))
+    else:
+        rows = db.query("SELECT * FROM emergency_contacts WHERE active=1 ORDER BY patient_id, id")
+    return {"contacts": rows}
+
+
+@router.post("/emergency-contacts", status_code=201)
+def add_contact(c: ContactIn):
+    _patient_or_404(c.patient_id)
+    if c.via not in ("auto", "textbelt", "telegram", "msg91", "twilio"):
+        raise HTTPException(422, "via must be one of auto|textbelt|telegram|msg91|twilio")
+    cur = db.execute(
+        "INSERT INTO emergency_contacts(patient_id,name,relation,phone,via,active,created_at) VALUES(?,?,?,?,?,1,?)",
+        (c.patient_id, c.name.strip(), c.relation.strip(), c.phone.strip(), c.via, db.now_iso()),
+    )
+    row = db.query_one("SELECT * FROM emergency_contacts WHERE id=?", (cur.lastrowid,))
+    return row
+
+
+@router.patch("/emergency-contacts/{contact_id}")
+def update_contact(contact_id: int, p: ContactPatch):
+    row = db.query_one("SELECT * FROM emergency_contacts WHERE id=?", (contact_id,))
+    if not row:
+        raise HTTPException(404, f"contact {contact_id} not found")
+    fields, values = [], []
+    for col in ("name", "relation", "phone", "via", "active"):
+        v = getattr(p, col)
+        if v is not None:
+            fields.append(f"{col}=?")
+            values.append(v)
+    if fields:
+        values.append(contact_id)
+        db.execute(f"UPDATE emergency_contacts SET {','.join(fields)} WHERE id=?", values)
+    return db.query_one("SELECT * FROM emergency_contacts WHERE id=?", (contact_id,))
+
+
+@router.delete("/emergency-contacts/{contact_id}")
+def delete_contact(contact_id: int):
+    row = db.query_one("SELECT * FROM emergency_contacts WHERE id=?", (contact_id,))
+    if not row:
+        raise HTTPException(404, f"contact {contact_id} not found")
+    db.execute("UPDATE emergency_contacts SET active=0 WHERE id=?", (contact_id,))
+    return {"deleted": contact_id}
+
+
+class PanicIn(BaseModel):
+    patient_id: str
+    note: Optional[str] = None          # optional free-text from the button press
+
+
+@router.post("/panic")
+def panic(p: PanicIn):
+    """PANIC button: raise an URGENT alert with ack/resolve lifecycle and page every
+    active emergency contact for the patient over SMS/Telegram/MSG91 (provider-dependent)."""
+    patient = _patient_or_404(p.patient_id)
+    note = (p.note or "").strip()
+    message = (f"{patient['name']} (age {patient['age']}) pressed the PANIC button in DIstoHelp. "
+               f"{('Note: ' + note + '. ') if note else ''}"
+               f"Vitals may be deteriorating - call the patient immediately and contact the care team.")
+
+    cur = db.execute(
+        "INSERT INTO alerts(patient_id,level,rule,reading,profile_fact,explanation,score_total,source,created_at) "
+        "VALUES(?,?,?,?,?,?,?,?,?)",
+        (p.patient_id, "urgent", "panic_button",
+         db.dumps({"loinc": None, "display": "Patient-reported emergency", "value": None, "unit": None}),
+         "patient pressed panic button", message, None, "panic", db.now_iso()),
+    )
+    from .alerts import get_alert
+    alert = get_alert(cur.lastrowid)
+
+    results = notify.send_emergency(
+        p.patient_id,
+        "DIstoHelp PANIC",
+        message,
+    )
+    return {
+        "alert": alert,
+        "patient": {"id": patient["id"], "name": patient["name"]},
+        "dispatched": len(results),
+        "results": results,
+        "provider_note": ("Set NOTIFY_PROVIDER / TEXTBELT_KEY / MSG91_AUTH_KEY / TELEGRAM_BOT_TOKEN "
+                          "to control delivery; with no provider configured, calls are logged to the screen."),
+    }
+
+
+@router.get("/notifications/log")
+def notification_log(patient_id: Optional[str] = None, limit: int = 50):
+    if patient_id:
+        rows = db.query("SELECT * FROM notifications WHERE patient_id=? ORDER BY id DESC LIMIT ?",
+                        (patient_id, limit))
+    else:
+        rows = db.query("SELECT * FROM notifications ORDER BY id DESC LIMIT ?", (limit,))
+    return {"notifications": rows}

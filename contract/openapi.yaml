@@ -150,6 +150,50 @@ paths:
       summary: List sent escalation notifications (incl. Kannada/Hindi text)
       parameters: [ { name: patient_id, in: query, schema: { type: string } } ]
       responses: { "200": { description: OK } }
+  /api/panic:
+    post:
+      summary: PANIC button — creates an URGENT alert (rule=panic_button) and sends SMS/Telegram to every active emergency contact of the patient
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [patient_id], properties: { patient_id: { type: string }, note: { type: string } } } } }
+      responses:
+        "200":
+          description: Panic result with per-contact delivery status (provider-dependent: textbelt/msg91/twilio/telegram; without provider, deliveries are screen-logged)
+  /api/emergency-contacts:
+    get:
+      summary: List active emergency contacts (optionally filtered by patient_id)
+      parameters: [ { name: patient_id, in: query, schema: { type: string } } ]
+      responses: { "200": { description: OK } }
+    post:
+      summary: Add an emergency contact for a patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patient_id, name, phone]
+              properties:
+                patient_id: { type: string }
+                name: { type: string }
+                relation: { type: string, default: family }
+                phone: { type: string, description: "E.164-ish, e.g. +91 98xxxxx" }
+                via: { type: string, enum: [auto, textbelt, msg91, telegram, twilio], default: auto }
+      responses: { "201": { description: Created } }
+  /api/emergency-contacts/{contact_id}:
+    patch:
+      summary: Update a contact (name/relation/phone/via/active)
+      parameters: [ { name: contact_id, in: path, required: true, schema: { type: integer } } ]
+      responses: { "200": { description: Updated } }
+    delete:
+      summary: Deactivate a contact (soft delete — active=0)
+      parameters: [ { name: contact_id, in: path, required: true, schema: { type: integer } } ]
+      responses: { "200": { description: Deleted } }
+  /api/notifications/log:
+    get:
+      summary: Delivery log for outbound notifications (panic/critical-auto-notify/escalations)
+      parameters: [ { name: patient_id, in: query, schema: { type: string } }, { name: limit, in: query, schema: { type: integer, default: 50 } } ]
+      responses: { "200": { description: OK } }
   /api/simulator/{patient_id}/start:
     post:
       summary: Start virtual wearable streaming for a patient

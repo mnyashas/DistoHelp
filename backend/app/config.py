@@ -22,6 +22,8 @@ AUTO_STREAM_RATE = float(os.getenv("DEMO_AUTOSTREAM_RATE", "20"))  # readings pe
 MISSING_DATA_MINUTES = float(os.getenv("MISSING_DATA_MINUTES", "10"))
 # Optional webhook for escalations (e.g. Twilio/MSG91 relay). Empty = log+store only.
 ESCALATION_WEBHOOK_URL = os.getenv("ESCALATION_WEBHOOK_URL", "")
+# Auto-notify emergency contacts when an URGENT alert fires (1/0). Costs one SMS per contact per window.
+NOTIFY_ON_CRITICAL = os.getenv("NOTIFY_ON_CRITICAL", "1") == "1"
 # Demo OTP for the frontend's simulated Aadhaar login. Change for real SMS relay.
 DEMO_OTP = os.getenv("DEMO_OTP", "123456")
 # Shared secret for ESP32 devices posting to /api/sensors/readings (x-device-key)

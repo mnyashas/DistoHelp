@@ -152,6 +152,18 @@ CREATE TABLE IF NOT EXISTS sensor_readings (
   vitals TEXT NOT NULL,                  -- JSON
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS emergency_contacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  patient_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  relation TEXT,             -- spouse | parent | child | friend | doctor | caregiver
+  phone TEXT NOT NULL,
+  via TEXT NOT NULL DEFAULT 'auto',   -- auto | textbelt | telegram | msg91 | twilio
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_emergency_patient ON emergency_contacts(patient_id);
+
 CREATE TABLE IF NOT EXISTS auth_tokens (
   token TEXT PRIMARY KEY,
   aadhaar TEXT NOT NULL,
