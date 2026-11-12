@@ -52,5 +52,24 @@ Notes:
 - `npm run build` uses `VITE_API_URL`/`VITE_WS_URL` to reach the backend — see `src/services/api.js` and `Live.jsx`/`Watch.jsx`. Default is same-origin `/api`, which is what Route A needs — do **not** set these for Route A.
 - WebSocket (`/ws/live`) is the hard part for pure-static hosting; Route A handles it transparently.
 
+## Route C — Render.com (permanent, free, no domain needed) — deployed from `render.yaml`
+
+Fully self-hosted public URLs on Render's free tier. No tunnel, no domain, no signup beyond a Render account (GitHub sign-in).
+
+```powershell
+# 1. Open render.com (Sign up with GitHub — free, no card)
+# 2. New -> Blueprint -> select repo mnyashas/DIstoHelp -> Apply
+# 3. Render reads render.yaml and creates:
+#    distohelp-ps03-api  (FastAPI, HAPI public sandbox)  https://distohelp-ps03-api.onrender.com
+#    distohelp-ps03-ui   (static frontend, CDN, HTTPS)   https://distohelp-ps03-ui.onrender.com
+# 4. ~5 min later both are live. Share the ui URL with judges.
+```
+
+Caveats (honest):
+- Free instances **sleep after 15 min idle** — first request in ~60 s. Fine for a demo; for 24/7 use pay $7/mo.
+- SQLite re-seeds on every boot; mentor data + monitoring history reset on redeploy/restart.
+- HAPI uses public hapi.fhir.org/baseR4 — good for the demo, not for real patient data.
+- For a true production setup you'd need a domain (Cloudflare named tunnel or Render custom domain) and a managed FHIR store.
+
 ## What NOT to attempt
 Running the backend on Cloudflare Workers — it's a FastAPI app with SQLite, HAPI FHIR and WebSockets; porting to Workers would be a full rewrite, not a deploy.
