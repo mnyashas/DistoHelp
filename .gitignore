@@ -28,3 +28,4 @@ scripts/synthea/
 Thumbs.db
 .idea/
 .vscode/
+scripts/cloudflared/

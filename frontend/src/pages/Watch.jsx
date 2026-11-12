@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { HeartPulse, Wifi, WifiOff } from 'lucide-react';
+import { api } from '../services/api.js';
 
 const RISK = {
   none: { color: '#10b981', label: 'STABLE', glow: 'rgba(16,185,129,.45)' },
@@ -42,8 +43,7 @@ export default function Watch() {
   }, []);
 
   useEffect(() => {
-    fetch(`/api/patients/${patientId}`)
-      .then((r) => (r.ok ? r.json() : null))
+    api(`/patients/${patientId}`)
       .then((d) => d && setPatientName((d.fullName || d.name || '').split(' ')[0]))
       .catch(() => {});
   }, [patientId]);
@@ -52,8 +52,11 @@ export default function Watch() {
     let ws;
     let retry;
     const connect = () => {
-      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-      ws = new WebSocket(`${proto}://${location.host}/ws/live`);
+      const base = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || '';
+      const url = base
+        ? base.replace(/^http/, 'ws').replace(/\/$/, '') + '/ws/live'
+        : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/live`;
+      ws = new WebSocket(url);
       ws.onopen = () => setConnected(true);
       ws.onclose = () => { setConnected(false); retry = setTimeout(connect, 1500); };
       ws.onmessage = (ev) => {

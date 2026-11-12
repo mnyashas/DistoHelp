@@ -10,6 +10,16 @@ import { fmt } from '../services/format.js';
 import { connectBLE } from '../sensors/ble.js';
 
 const LOINC_KEY = { '8867-4': 'hr', '2708-6': 'spo2', '9279-1': 'rr', '8310-5': 'temp' };
+const WS_PATH = '/ws/live';
+
+export function wsUrlForLive() {
+  const base = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || '';
+  if (base) {
+    return base.replace(/^http/, 'ws').replace(/\/$/, '') + WS_PATH;
+  }
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${proto}://${location.host}${WS_PATH}`;
+}
 
 export default function Live() {
   const [patients, setPatients] = useState([]);
@@ -32,8 +42,8 @@ export default function Live() {
   useEffect(() => {
     let ws, retry;
     const connect = () => {
-      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-      ws = new WebSocket(`${proto}://${location.host}/ws/live`);
+      const wsUrl = wsUrlForLive();
+      ws = new WebSocket(wsUrl);
       ws.onmessage = (ev) => {
         try {
           const msg = JSON.parse(ev.data);

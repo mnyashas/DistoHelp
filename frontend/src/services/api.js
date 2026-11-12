@@ -1,4 +1,6 @@
-const BASE = '/api';
+// Dev: same-origin /api (vite proxy -> localhost:8000)
+// Prod build for Cloudflare Pages: set VITE_API_URL to the backend's public URL
+const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api';
 
 export const getToken = () => localStorage.getItem('spm_token');
 export const setToken = (token) =>
