@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Stethoscope, ShieldCheck, LogOut, Printer, CheckCircle2, ChevronRight, Info,
+  Watch, Camera, Bluetooth, Radio,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend,
 } from 'recharts';
 import { api } from '../services/api.js';
 import { RISK, Spinner } from '../components/ui.jsx';
+import { CameraPpg } from '../sensors/cameraPpg.js';
+import { connectBLE } from '../sensors/ble.js';
 
 const QUESTIONS = [
   { key: 'breathlessness', label: 'Breathlessness', options: [['None', 0], ['Mild', 1], ['Severe', 2]] },
@@ -105,6 +108,8 @@ export default function PatientPortal() {
     </div>
   );
 }
+
+const isSeedPatient = (id) => /^p0[1-5]$/.test(id);
 
 function Report({ token, onLogout }) {
   const [r, setR] = useState(null);
@@ -222,6 +227,15 @@ function Report({ token, onLogout }) {
           <p className="mt-2 text-[11px] text-gray-400">Only your care team can acknowledge or clear these. Please call the hospital helpline if you feel much worse.</p>
         </section>
 
+        {/* self-monitor — only for user-added patients */}
+        {!isSeedPatient(p.id) && <SelfMonitor patientId={p.id} patientName={p.fullName} onSaved={load} />}
+        {isSeedPatient(p.id) && (
+          <section className="card text-sm text-slate-500">
+            <h2 className="mb-1 font-bold text-slate-600">Readings & monitoring</h2>
+            <p>This is a simulated cohort supplied by your clinic for the demonstration. Measurements are recorded by the wearable monitor — you can see your history above; phone-based self-monitoring is disabled for this profile.</p>
+          </section>
+        )}
+
         {/* check-in */}
         <section className="card print:hidden">
           <h2 className="mb-3 font-bold">How are you feeling today?</h2>
@@ -255,4 +269,144 @@ function Report({ token, onLogout }) {
       </main>
     </div>
   );
+}
+
+// Self-monitoring card shown only to user-added patients: streams their phone's
+// camera PPG (or a BLE band) straight into the same pipeline as the cohort.
+function SelfMonitor({ patientId, patientName, onSaved }) {
+  const [source, setSource] = useState('camera');
+  const [streaming, setStreaming] = useState(false);
+  const [bpm, setBpm] = useState(null);
+  const [quality, setQuality] = useState(0);
+  const [sent, setSent] = useState(0);
+  const [msg, setMsg] = useState('');
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const waveRef = useRef(null);
+  const ppgRef = useRef(null);
+  const bleRef = useRef(null);
+  const latest = useRef({ bpm: null, quality: 0 });
+
+  const startCamera = async () => {
+    setMsg('');
+    try {
+      const ppg = new CameraPpg(videoRef.current, canvasRef.current);
+      ppg.onUpdate = ({ bpm, quality, waveform }) => {
+        latest.current = { bpm, quality };
+        setBpm(bpm);
+        setQuality(quality);
+        drawWave(waveRef.current, waveform, bpm ? '#2dd4bf' : '#475569');
+      };
+      ppgRef.current = ppg;
+      await ppg.start();
+      setStreaming(true);
+    } catch (e) {
+      setMsg('Camera needs a secure context (HTTPS or localhost). If unavailable here, the BLE band option works on Chrome/Edge too.');
+    }
+  };
+  const stopCamera = () => { ppgRef.current?.stop(); setStreaming(false); setBpm(null); setQuality(0); };
+
+  const startBLE = async () => {
+    setMsg('');
+    try {
+      bleRef.current = await connectBLE(({ heartRate }) => {
+        latest.current = { bpm: heartRate, quality: 0.9 };
+        setBpm(heartRate);
+        setQuality(0.9);
+      });
+      setStreaming(true);
+    } catch (e) {
+      setMsg(e.message || 'Bluetooth unavailable — needs Chrome/Edge and a BLE heart-rate band (HTTPS or localhost).');
+    }
+  };
+  const stopBLE = () => {
+    try { bleRef.current?.gatt?.disconnect(); } catch { /* ignore */ }
+    bleRef.current = null;
+    setStreaming(false); setBpm(null); setQuality(0);
+  };
+
+  const start = source === 'camera' ? startCamera : startBLE;
+  const stop = source === 'camera' ? stopCamera : stopBLE;
+
+  useEffect(() => {
+    if (!streaming) return;
+    const id = setInterval(async () => {
+      const { bpm, quality } = latest.current;
+      if (!bpm || quality < 0.12) return;
+      try {
+        await api('/sensors/readings', {
+          method: 'POST',
+          headers: { 'x-device-key': 'demo-esp32-key' },
+          body: { patient_id: patientId, source: source === 'camera' ? 'camera' : 'ble', vitals: { heartRate: bpm } },
+        });
+        setSent((s) => s + 1);
+        onSaved?.();
+      } catch { /* keep streaming */ }
+    }, 2000);
+    return () => clearInterval(id);
+  }, [streaming, patientId, source, onSaved]);
+
+  return (
+    <section className="card print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 font-bold"><Watch className="text-teal-500" size={18} /> Monitor with your phone</h2>
+        <div className="flex rounded-xl bg-slate-100 p-1">
+          {[['camera', 'Phone camera', Camera], ['ble', 'BLE band', Bluetooth]].map(([id, label, Icon]) => (
+            <button key={id} onClick={() => setSource(id)} disabled={streaming}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${source === id ? 'bg-white text-navy-900 shadow' : 'text-slate-500'}`}>
+              <Icon size={13} /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-4 md:grid-cols-[auto_1fr_auto] md:items-center">
+        <div className="relative h-32 w-32 overflow-hidden rounded-2xl bg-slate-900">
+          <video ref={videoRef} className="h-full w-full object-cover opacity-60" muted playsInline />
+          <canvas ref={canvasRef} width={160} height={120} className="hidden" />
+          {source === 'ble' && <div className="grid h-full w-full place-items-center text-sky-400"><Bluetooth size={36} /></div>}
+          <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[8px] uppercase text-slate-300">{source === 'camera' ? 'finger on lens' : 'ble'}</span>
+        </div>
+        <canvas ref={waveRef} width={300} height={88} className="w-full rounded-xl bg-slate-900" />
+        <div className="text-center md:w-28">
+          <p className="text-5xl font-black tabular-nums text-navy-900 leading-none">{bpm ?? '––'}</p>
+          <p className="text-[9px] uppercase tracking-widest text-slate-400">bpm · live</p>
+          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded bg-slate-200">
+            <div className="h-full bg-teal-500" style={{ width: `${Math.round(quality * 100)}%` }} />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-slate-500">
+          {streaming ? `Streaming pulse for ${patientName} · ${sent} readings synced · shows on your clinic's dashboard & here above` : 'Place fingertip over the camera lens (or pair a BLE band) and start streaming — same NEWS2 scoring as the monitored patients.'}
+        </p>
+        <button className={`btn-primary ${streaming ? '!from-red-500 !to-rose-500' : ''}`} onClick={streaming ? stop : start}>
+          {streaming ? 'Stop' : (<><Radio size={16} /> Start streaming</>)}
+        </button>
+      </div>
+      {msg && <p className="text-xs text-amber-700">{msg}</p>}
+      <p className="text-[10px] text-slate-400">Secure-context note: camera/BLE require HTTPS or localhost (Chrome/Edge). This is a demo build.</p>
+    </section>
+  );
+}
+
+function drawWave(canvas, data, color) {
+  if (!canvas || !data || data.length < 4) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, w, h);
+  const max = Math.max(...data.map((v) => Math.abs(v)), 1);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h / 2 + (v / max) * (h / 2 - 6);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  });
+  ctx.stroke();
 }
