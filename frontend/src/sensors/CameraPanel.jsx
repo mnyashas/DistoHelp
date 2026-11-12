@@ -20,10 +20,10 @@ export default function CameraPanel({ onReading, onSave, saving }) {
     setErr('');
     try {
       const ppg = new CameraPpg(videoRef.current, canvasRef.current);
-      ppg.onUpdate = ({ bpm, quality, waveform }) => {
+      ppg.onUpdate = ({ bpm, quality, state, waveform }) => {
         setBpm(bpm);
         setQuality(quality);
-        setState(bpm ? 'locked' : 'waiting');
+        setState(state || 'idle');
         if (bpm) onReading?.({ heartRate: bpm });
         drawWave(waveRef.current, waveform, bpm ? '#465fff' : '#475569');
       };
@@ -75,9 +75,11 @@ export default function CameraPanel({ onReading, onSave, saving }) {
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-gray-500">
-          {state === 'locked'
-            ? 'Locked on — real photoplethysmography (PPG) from your fingertip.'
-            : 'Cover the rear camera completely with a fingertip in good light. Keep still.'}
+          {state === 'locked' && 'Locked on — real photoplethysmography (PPG) from your fingertip.'}
+          {state === 'estimating' && 'Reading pulse… keep your finger still. BPM will appear after a few more seconds.'}
+          {state === 'settling' && 'Settling in… keep the finger fully over the lens.'}
+          {state === 'no-finger' && 'No pulse detected — the fingertip must completely cover the rear camera, LED on. Avoid bright backlight.'}
+          {(state === 'idle' || !state) && 'Cover the rear camera completely with a fingertip, LED ON. Wait 15–30 s. Keep still.'}
         </p>
         <button className="btn-primary" disabled={!bpm || saving} onClick={() => onSave?.({ heartRate: bpm })}>
           <CheckCircle2 size={16} /> Save pulse reading

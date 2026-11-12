@@ -1,19 +1,21 @@
-// Real heart-rate measurement from a phone camera via PPG (photoplethysmography).
-// Put a fingertip over the BACK camera (with flash on) — blood volume pulses change
-// the red-channel absorption each wave. We detrend the signal and find the dominant
-// period via autocorrelation (30–150 bpm). This is a real measurement, not a simulation.
+// Real heart rate from a phone camera via PPG (photoplethysmography).
+// Cover the BACK camera (flash ON) with a fingertip; blood volume pulses
+// modulate green-channel intensity. Signal is resampled to a fixed 100 Hz,
+// detrended, and beats are found by peak detection with a 300 ms refractory.
+// Confidence is exposed as `state` so the UI can guide the user.
 
 export class CameraPpg {
   constructor(video, canvas) {
     this.video = video;
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d', { willReadFrequently: true });
-    this.samples = [];       // {t, g} green-channel intensity of ROI
+    this.samples = [];     // {t, g} green-channel intensity of ROI
     this.running = false;
     this.bpm = null;
-    this.quality = 0;        // 0..1 — contact/stability confidence
-    this.waveform = [];      // detrended values for the canvas scroll
-    this.onUpdate = null;    // (state) => void
+    this.quality = 0;      // 0..1 — contact/stability confidence
+    this.state = 'idle';   // 'no-finger' | 'settling' | 'estimating' | 'locked'
+    this.waveform = [];    // detrended values for the canvas scroll
+    this.onUpdate = null;
     this._raf = null;
     this._lastCalc = 0;
   }
@@ -25,7 +27,6 @@ export class CameraPpg {
     });
     this.video.srcObject = stream;
     await this.video.play();
-    // enable torch if available (Chrome on Android)
     try {
       const track = stream.getVideoTracks()[0];
       const caps = track.getCapabilities?.() || {};
@@ -49,62 +50,132 @@ export class CameraPpg {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const w = canvas.width, h = canvas.height;
-      const roi = ctx.getImageData(w * 0.35, h * 0.35, w * 0.3, h * 0.3).data;
+      // centre region only — edge pixels are usually noise
+      const roi = ctx.getImageData(Math.floor(w * 0.4), Math.floor(h * 0.4), Math.floor(w * 0.2), Math.floor(h * 0.2)).data;
       let g = 0;
       for (let i = 0; i < roi.length; i += 4) g += roi[i + 1];
       g /= roi.length / 4;
       const now = performance.now();
       this.samples.push({ t: now, g });
-      while (this.samples.length && this.samples[0].t < now - 15000) this.samples.shift();
+      while (this.samples.length && this.samples[0].t < now - 12000) this.samples.shift();
       this._calc(now);
     }
     this._raf = requestAnimationFrame(this._loop);
   };
 
+  _resample(samples, rateHz) {
+    if (samples.length < 2) return [];
+    const t0 = samples[0].t, t1 = samples[samples.length - 1].t;
+    const dur = (t1 - t0) / 1000;
+    const N = Math.max(1, Math.floor(dur * rateHz));
+    const out = new Array(N);
+    let j = 0;
+    for (let i = 0; i < N; i++) {
+      const t = t0 + (i * 1000) / rateHz;
+      while (j < samples.length - 2 && samples[j + 1].t < t) j++;
+      const a = samples[j], b = samples[Math.min(j + 1, samples.length - 1)];
+      const span = b.t - a.t;
+      const w = span > 0 ? (t - a.t) / span : 0;
+      out[i] = a.g + w * (b.g - a.g);
+    }
+    return out;
+  }
+
+  _detrend(x, windowSamples) {
+    const n = x.length, out = new Array(n);
+    const half = Math.floor(windowSamples / 2);
+    let sum = 0;
+    for (let i = 0; i < Math.min(windowSamples, n); i++) sum += x[i];
+    for (let i = 0; i < n; i++) {
+      if (i + half < n) sum += x[i + half];
+      if (i - half - 1 >= 0) sum -= x[i - half - 1];
+      const count = Math.min(i + half, n - 1) - Math.max(i - half, 0) + 1;
+      out[i] = x[i] - sum / count;
+    }
+    return out;
+  }
+
   _calc(now) {
-    if (now - this._lastCalc < 800) { this._emit(); return; }
+    if (now - this._lastCalc < 700) { this._emit(); return; }
     this._lastCalc = now;
     const s = this.samples;
-    if (s.length < 150) { this._emit(); return; }
+    if (s.length < 60) { this.state = 'settling'; this._emit(); return; }
+
     const g0 = s.map((p) => p.g);
     const mean = g0.reduce((a, b) => a + b, 0) / g0.length;
     const variance = g0.reduce((a, b) => a + (b - mean) ** 2, 0) / g0.length;
-    // finger detected if the signal has pulsatile variance (not a static frame)
-    this.quality = variance > 2 ? Math.min(1, variance / 60) : 0;
-    if (this.quality < 0.15) { this.bpm = null; this.waveform = []; this._emit(); return; }
+    this.quality = Math.max(0, Math.min(1, variance / 40));
 
-    // detrend: subtract moving average (~0.8 s window)
-    const W = 24;
-    const dt = g0.map((_, i) => {
-      const a = Math.max(0, i - W), b = Math.min(g0.length, i + W);
-      let m = 0;
-      for (let j = a; j < b; j++) m += g0[j];
-      m /= (b - a);
-      return g0[i] - m;
-    });
-    this.waveform = dt.slice(-160);
+    if (this.quality < 0.08) {
+      this.state = 'no-finger';
+      this.bpm = null;
+      this.waveform = [];
+      this._emit();
+      return;
+    }
 
-    // autocorrelation HR estimate over lags for 30–150 bpm
-    const n = dt.length;
-    const meanDt = dt.reduce((a, b) => a + b, 0) / n;
-    const centered = dt.map((v) => v - meanDt);
-    const varDt = centered.reduce((a, b) => a + b * b, 0) || 1;
+    const rate = 100;
+    const uniform = this._resample(s, rate);
+    const det = this._detrend(uniform, Math.floor(rate * 0.75));   // ~750 ms window
+    this.waveform = det.slice(-160);
+
+    // peak detection with 300 ms refractory
+    const absMax = Math.max(...det.map(Math.abs), 1);
+    const thresh = absMax * 0.45;
+    const refract = Math.floor(rate * 0.3);
+    const peaks = [];
+    let last = -refract;
+    for (let i = 1; i < det.length - 1; i++) {
+      if (det[i] > thresh && det[i] >= det[i - 1] && det[i] >= det[i + 1] && (i - last) > refract) {
+        peaks.push(i);
+        last = i;
+      }
+    }
+    if (peaks.length >= 4) {
+      const intervals = [];
+      for (let k = 1; k < peaks.length; k++) intervals.push((peaks[k] - peaks[k - 1]) / rate);
+      intervals.sort((a, b) => a - b);
+      const median = intervals[Math.floor(intervals.length / 2)];
+      const candidate = Math.round(60 / median);
+      if (candidate >= 30 && candidate <= 200) {
+        this.bpm = candidate;
+        this.state = 'locked';
+        this._emit();
+        return;
+      }
+    }
+    // fallback: autocorrelation over plausible lags (60–150 bpm)
+    const meanDt = det.reduce((a, b) => a + b, 0) / det.length;
+    const c = det.map((v) => v - meanDt);
+    const varC = c.reduce((a, b) => a + b * b, 0) || 1;
     let bestLag = -1, bestCorr = 0;
-    const minLag = Math.floor((60 / 150) * 30), maxLag = Math.floor((60 / 30) * 30); // ~30 fps sampling
-    for (let lag = minLag; lag <= Math.min(maxLag, n - 10); lag++) {
+    const minLag = Math.floor(rate * 60 / 150), maxLag = Math.floor(rate * 60 / 50);
+    for (let lag = minLag; lag <= Math.min(maxLag, c.length - 10); lag++) {
       let cov = 0;
-      for (let i = 0; i + lag < n; i++) cov += centered[i] * centered[i + lag];
-      const corr = cov / varDt / (1 - lag / n);
+      for (let i = 0; i + lag < c.length; i++) cov += c[i] * c[i + lag];
+      const corr = cov / varC / (1 - lag / c.length);
       if (corr > bestCorr) { bestCorr = corr; bestLag = lag; }
     }
-    if (bestLag > 0 && bestCorr > 0.45) {
-      const lagSeconds = bestLag / 30;   // approx frame rate ~30 fps
-      this.bpm = Math.round(60 / lagSeconds);
+    if (bestLag > 0 && bestCorr > 0.4) {
+      const candidate = Math.round(60 / (bestLag / rate));
+      if (candidate >= 30 && candidate <= 200) {
+        this.bpm = candidate;
+        this.state = 'locked';
+        this._emit();
+        return;
+      }
     }
+    this.bpm = null;
+    this.state = 'estimating';
     this._emit();
   }
 
   _emit() {
-    if (this.onUpdate) this.onUpdate({ bpm: this.bpm, quality: this.quality, waveform: this.waveform });
+    if (this.onUpdate) this.onUpdate({
+      bpm: this.bpm,
+      quality: this.quality,
+      state: this.state,
+      waveform: this.waveform,
+    });
   }
 }

@@ -21,6 +21,7 @@ export default function Wearable() {
   const [streaming, setStreaming] = useState(false);
   const [bpm, setBpm] = useState(null);
   const [quality, setQuality] = useState(0);
+  const [ppgState, setPpgState] = useState('idle');
   const [sent, setSent] = useState(0);
   const [lastSentAt, setLastSentAt] = useState(null);
   const [msg, setMsg] = useState('');
@@ -43,10 +44,11 @@ export default function Wearable() {
     setMsg('');
     try {
       const ppg = new CameraPpg(videoRef.current, canvasRef.current);
-      ppg.onUpdate = ({ bpm, quality, waveform }) => {
+      ppg.onUpdate = ({ bpm, quality, state, waveform }) => {
         latest.current = { bpm, quality };
         setBpm(bpm);
         setQuality(quality);
+        setPpgState(state || 'idle');
         drawWave(waveRef.current, waveform, bpm ? '#2dd4bf' : '#334155');
       };
       ppgRef.current = ppg;
@@ -56,7 +58,7 @@ export default function Wearable() {
       setMsg(e.message || 'Camera unavailable — grant camera permission (needs rear camera + light).');
     }
   };
-  const stopCamera = () => { ppgRef.current?.stop(); setStreaming(false); setBpm(null); setQuality(0); };
+  const stopCamera = () => { ppgRef.current?.stop(); setStreaming(false); setBpm(null); setQuality(0); setPpgState('idle'); };
 
   // ---------- BLE band source ----------
   const startBLE = async () => {
@@ -238,6 +240,14 @@ export default function Wearable() {
         </div>
 
         {msg && <p className="text-sm text-amber-700">{msg}</p>}
+        {streaming && source === 'camera' && (
+          <p className="rounded-xl bg-gray-50 px-4 py-2.5 text-xs text-gray-700">
+            {ppgState === 'locked' && <><b className="text-emerald-700">Locked on.</b> Real fingertip PPG — pulse rate reading live. Keep still.</>}
+            {ppgState === 'estimating' && <><b className="text-amber-700">Reading pulse…</b> keep your finger over the lens — BPM will appear in a few seconds.</>}
+            {ppgState === 'settling' && <><b className="text-amber-700">Settling in…</b> keep the finger fully over the lens.</>}
+            {ppgState === 'no-finger' && <><b className="text-red-600">No pulse detected.</b> Cover the ENTIRE rear camera with the fingertip, LED on, avoid bright backlight, keep still ~20 s.</>}
+          </p>
+        )}
         {streaming && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm">
             <p className="text-brand-900">

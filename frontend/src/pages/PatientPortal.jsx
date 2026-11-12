@@ -280,6 +280,7 @@ function SelfMonitor({ patientId, patientName, onSaved }) {
   const [quality, setQuality] = useState(0);
   const [sent, setSent] = useState(0);
   const [msg, setMsg] = useState('');
+  const [ppgState, setPpgState] = useState('idle');
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const waveRef = useRef(null);
@@ -291,10 +292,11 @@ function SelfMonitor({ patientId, patientName, onSaved }) {
     setMsg('');
     try {
       const ppg = new CameraPpg(videoRef.current, canvasRef.current);
-      ppg.onUpdate = ({ bpm, quality, waveform }) => {
+      ppg.onUpdate = ({ bpm, quality, state, waveform }) => {
         latest.current = { bpm, quality };
         setBpm(bpm);
         setQuality(quality);
+        setPpgState(state || 'idle');
         drawWave(waveRef.current, waveform, bpm ? '#2dd4bf' : '#475569');
       };
       ppgRef.current = ppg;
@@ -304,7 +306,7 @@ function SelfMonitor({ patientId, patientName, onSaved }) {
       setMsg('Camera needs a secure context (HTTPS or localhost). If unavailable here, the BLE band option works on Chrome/Edge too.');
     }
   };
-  const stopCamera = () => { ppgRef.current?.stop(); setStreaming(false); setBpm(null); setQuality(0); };
+  const stopCamera = () => { ppgRef.current?.stop(); setStreaming(false); setBpm(null); setQuality(0); setPpgState('idle'); };
 
   const startBLE = async () => {
     setMsg('');
@@ -379,7 +381,13 @@ function SelfMonitor({ patientId, patientName, onSaved }) {
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-slate-500">
-          {streaming ? `Streaming pulse for ${patientName} · ${sent} readings synced · shows on your clinic's dashboard & here above` : 'Place fingertip over the camera lens (or pair a BLE band) and start streaming — same NEWS2 scoring as the monitored patients.'}
+          {streaming
+            ? ppgState === 'locked' ? `Reading pulse for ${patientName} · ${sent} synced · shows on your clinic's dashboard`
+              : ppgState === 'estimating' ? 'Reading pulse… hold steady — BPM will appear in a few seconds'
+              : ppgState === 'settling' ? 'Cover the ENTIRE rear lens and keep perfectly still…'
+              : ppgState === 'no-finger' ? 'No pulse detected — fingertip must fully cover camera, LED on'
+              : `Streaming pulse for ${patientName} · ${sent} synced`
+            : 'Place fingertip over the camera lens (or pair a BLE band) and start streaming — same NEWS2 scoring as the monitored patients.'}
         </p>
         <button className={`btn-primary ${streaming ? '!from-red-500 !to-rose-500' : ''}`} onClick={streaming ? stop : start}>
           {streaming ? 'Stop' : (<><Radio size={16} /> Start streaming</>)}
