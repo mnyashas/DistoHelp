@@ -21,6 +21,8 @@ backend/data/
 # BIDMC CSVs committed for offline demo (open access, see README)
 # HAPI FHIR CLI
 scripts/hapi-fhir-cli*
+# Synthea jar + generated population (large) — regenerate with scripts\generate_synthea.ps1
+scripts/synthea/
 # OS / editors
 .DS_Store
 Thumbs.db

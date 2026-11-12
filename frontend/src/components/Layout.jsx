@@ -94,6 +94,9 @@ export default function Layout() {
         <main className="p-4 md:p-8">
           <Outlet />
         </main>
+        <footer className="border-t border-slate-200 bg-white/80 px-4 py-2 text-center text-[11px] text-slate-500 backdrop-blur">
+          <span className="font-semibold text-amber-700">Clinical decision support only — not a medical diagnosis system.</span> All alerts must be reviewed by a qualified clinician.
+        </footer>
       </div>
     </div>
   );

@@ -68,16 +68,23 @@ HTML served at :5173, proxied `/api/patients` returns the 5 seeded patients.
 
 ## Demo script (6 minutes)
 
-1. Sign in at http://localhost:5173 → Dashboard: 5 patients, p02 flagged High Risk (NEWS2 7).
+1. Sign in at http://localhost:5173 → Dashboard: 5 **real Synthea-generated** patients (see
+   `backend/app/seed_data/synthea_patients.json`, produced by `scripts/import_synthea.py` from a
+   250-patient Synthea run; regenerate anytime with `scripts/generate_synthea.ps1`).
+   p01 Beryl (COPD → SpO₂ Scale 2 + metoprolol beta-blocker blunting, both rules on one patient),
+   p02 Denis (81, post-sepsis CHF) is flagged High Risk (NEWS2 7).
 2. **Live Monitoring** (`/live`) → **Start demo streams**: p02 drifts into deterioration on the
    telemetry grid, artifacts get suppressed, alert banner + chime fire, ack/resolve from the stream.
 3. Open **watch companion** (`/watch?p=p02`) on a phone on the same LAN — wrist UI streams live
    vitals over WebSocket; URGENT flashes + buzzes.
-4. `POST /api/simulator/p04/start {"scenario":"probe_removal"}` → grey device badge, **no** red alert.
-5. `POST /api/escalations {"alert_id": …}` → EN/HI/KN message + FHIR Flag/CommunicationRequest.
-6. `POST /api/scenarios/evaluate` → performance report: detection lead time & alerts/patient-day vs naive thresholds.
-7. `GET /api/hapi/status` → shows async HAPI worker stats (`observations_flushed`, queue depth).
-8. `POST /api/bidmc/replay {"record_id":"bidmc_03","patient_id":"p03","speed":600,"max_minutes":3}` → **real PhysioNet BIDMC ICU recordings** (committed to the repo; open access) replay through the pipeline with `source: "bidmc"`.
+4. Open **patient check-in** (`/patient`) — pick p02, report breathlessness=severe + fever →
+   the answer lands in the monitoring score (PDF Hint #1).
+5. `POST /api/simulator/p04/start {"scenario":"probe_removal"}` → grey device badge, **no** red alert.
+6. `POST /api/bidmc/replay {"record_id":"bidmc_03","patient_id":"p03","speed":600,"max_minutes":3}` →
+   **real PhysioNet BIDMC ICU recordings** (committed to the repo) into the live pipeline.
+7. `POST /api/escalations {"alert_id": …}` → EN/HI/KN message + FHIR Flag/CommunicationRequest.
+8. `POST /api/scenarios/evaluate` → performance report: detection lead time & alerts/patient-day vs naive thresholds (PDF §3.7/§5).
+9. `GET /api/hapi/status` → async HAPI worker stats.
 
 ## Evaluation criteria coverage
 

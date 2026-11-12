@@ -1,0 +1,692 @@
+[
+  {
+    "id": "p05",
+    "name": "Andre D'Amore",
+    "age": 11,
+    "gender": "male",
+    "dob": "2015-09-25",
+    "conditions": [
+      {
+        "code": "65363002",
+        "display": "Otitis media (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "10509002",
+        "display": "Acute bronchitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "125605004",
+        "display": "Fracture of bone (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "58150001",
+        "display": "Fracture of clavicle (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "233678006",
+        "display": "Childhood asthma (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "444814009",
+        "display": "Viral sinusitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "384709000",
+        "display": "Sprain (morphologic abnormality)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "44465007",
+        "display": "Sprain of ankle (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      }
+    ],
+    "medications": [
+      {
+        "code": "309097",
+        "display": "Cefuroxime 250 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "198405",
+        "display": "Ibuprofen 100 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "313782",
+        "display": "Acetaminophen 325 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "308192",
+        "display": "Amoxicillin 500 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "895996",
+        "display": "120 ACTUAT fluticasone propionate 0.044 MG/ACTUAT Metered Dose Inhaler [Flovent]",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "351136",
+        "display": "albuterol 0.417 MG/ML Inhalation Solution",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      }
+    ],
+    "risk_flags": {},
+    "discharge_note": "Synthea-generated asthma discharge. Primary condition: Childhood asthma (disorder).",
+    "phone": "98450 00001",
+    "address": "Synthea-generated record, slot p05"
+  },
+  {
+    "id": "p04",
+    "name": "April Lemke",
+    "age": 62,
+    "gender": "female",
+    "dob": "1963-11-14",
+    "conditions": [
+      {
+        "code": "428251008",
+        "display": "History of appendectomy (situation)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "161744009",
+        "display": "Past pregnancy history of miscarriage (situation)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "110030002",
+        "display": "Concussion injury of brain (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "62106007",
+        "display": "Concussion with no loss of consciousness (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "68496003",
+        "display": "Polyp of colon (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "93761005",
+        "display": "Primary malignant neoplasm of colon (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "195662009",
+        "display": "Acute viral pharyngitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "90460009",
+        "display": "Injury of neck (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "39848009",
+        "display": "Whiplash injury to neck (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "444814009",
+        "display": "Viral sinusitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "59621000",
+        "display": "Essential hypertension (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "36971009",
+        "display": "Sinusitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "40055000",
+        "display": "Chronic sinusitis (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      }
+    ],
+    "medications": [
+      {
+        "code": "849574",
+        "display": "Naproxen sodium 220 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "310798",
+        "display": "Hydrochlorothiazide 25 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "314076",
+        "display": "lisinopril 10 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      }
+    ],
+    "risk_flags": {},
+    "discharge_note": "Synthea-generated post op discharge. Primary condition: History of appendectomy (situation).",
+    "phone": "98450 00001",
+    "address": "Synthea-generated record, slot p04"
+  },
+  {
+    "id": "p03",
+    "name": "Athena Cartwright",
+    "age": 75,
+    "gender": "female",
+    "dob": "1950-11-13",
+    "conditions": [
+      {
+        "code": "44054006",
+        "display": "Diabetes mellitus type 2 (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "302870006",
+        "display": "Hypertriglyceridemia (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "431855005",
+        "display": "Chronic kidney disease stage 1 (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "127013003",
+        "display": "Disorder of kidney due to diabetes mellitus (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "237602007",
+        "display": "Metabolic syndrome X (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "431856006",
+        "display": "Chronic kidney disease stage 2 (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "90781000119102",
+        "display": "Microalbuminuria due to type 2 diabetes mellitus (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "161744009",
+        "display": "Past pregnancy history of miscarriage (situation)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "433144002",
+        "display": "Chronic kidney disease stage 3 (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "157141000119108",
+        "display": "Proteinuria due to type 2 diabetes mellitus (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "1551000119108",
+        "display": "Nonproliferative diabetic retinopathy due to type II diabetes mellitus",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "37320007",
+        "display": "Loss of teeth (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "431857002",
+        "display": "Chronic kidney disease stage 4 (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "698306007",
+        "display": "Awaiting transplantation of kidney (situation)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "10509002",
+        "display": "Acute bronchitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "46177005",
+        "display": "End-stage renal disease (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "161665007",
+        "display": "History of renal transplant (situation)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      }
+    ],
+    "medications": [
+      {
+        "code": "106892",
+        "display": "insulin isophane, human 70 UNT/ML / insulin, regular, human 30 UNT/ML Injectable Suspension [Humulin]",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "749785",
+        "display": "{7 (ethinyl estradiol 0.035 MG / norgestimate 0.18 MG Oral Tablet) / 7 (ethinyl estradiol 0.035 MG / norgestimate 0.215 MG Oral Tablet) / 7 (ethinyl estradiol 0.035 MG / norgestimate 0.25 MG Oral Tablet) / 7 (inert ingredients 1 MG Oral Tablet) } Pack [Ortho Tri-Cyclen 28 Day]",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "313782",
+        "display": "Acetaminophen 325 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "1359133",
+        "display": "{5 (ethinyl estradiol 0.02 MG / norethindrone acetate 1 MG Oral Tablet) / 7 (ethinyl estradiol 0.03 MG / norethindrone acetate 1 MG Oral Tablet) / 9 (ethinyl estradiol 0.035 MG / norethindrone acetate 1 MG Oral Tablet) / 7 (ferrous fumarate 75 MG Oral Tablet) } Pack [Estrostep Fe 28 Day]",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "1664463",
+        "display": "24 HR tacrolimus 1 MG Extended Release Oral Tablet [Envarsus]",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      }
+    ],
+    "risk_flags": {},
+    "discharge_note": "Synthea-generated diabetes discharge. Primary condition: Diabetes mellitus type 2 (disorder).",
+    "phone": "98450 00001",
+    "address": "Synthea-generated record, slot p03"
+  },
+  {
+    "id": "p01",
+    "name": "Beryl Catheryn Jacobs",
+    "age": 74,
+    "gender": "female",
+    "dob": "1952-04-10",
+    "conditions": [
+      {
+        "code": "195967001",
+        "display": "Asthma (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "161744009",
+        "display": "Past pregnancy history of miscarriage (situation)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "37320007",
+        "display": "Loss of teeth (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "267020005",
+        "display": "History of tubal ligation (situation)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "59621000",
+        "display": "Essential hypertension (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "237602007",
+        "display": "Metabolic syndrome X (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "64859006",
+        "display": "Osteoporosis (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "444814009",
+        "display": "Viral sinusitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "68496003",
+        "display": "Polyp of colon (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "10509002",
+        "display": "Acute bronchitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "61804006",
+        "display": "Alveolitis of jaw (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "185086009",
+        "display": "Chronic obstructive bronchitis (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "90460009",
+        "display": "Injury of neck (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "39848009",
+        "display": "Whiplash injury to neck (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "414545008",
+        "display": "Ischemic heart disease (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "431855005",
+        "display": "Chronic kidney disease stage 1 (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "127013003",
+        "display": "Disorder of kidney due to diabetes mellitus (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      }
+    ],
+    "medications": [
+      {
+        "code": "308136",
+        "display": "amLODIPine 2.5 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "349094",
+        "display": "budesonide 0.125 MG/ML Inhalation Suspension",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "630208",
+        "display": "albuterol 0.83 MG/ML Inhalation Solution",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "904419",
+        "display": "Alendronic acid 10 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "1043400",
+        "display": "Acetaminophen 21.7 MG/ML / Dextromethorphan Hydrobromide 1 MG/ML / doxylamine succinate 0.417 MG/ML Oral Solution",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "849574",
+        "display": "Naproxen sodium 220 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "896209",
+        "display": "60 ACTUAT Fluticasone propionate 0.25 MG/ACTUAT / salmeterol 0.05 MG/ACTUAT Dry Powder Inhaler",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "313782",
+        "display": "Acetaminophen 325 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "309362",
+        "display": "Clopidogrel 75 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "312961",
+        "display": "Simvastatin 20 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "866412",
+        "display": "24 HR metoprolol succinate 100 MG Extended Release Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": true
+      },
+      {
+        "code": "705129",
+        "display": "Nitroglycerin 0.4 MG/ACTUAT Mucosal Spray",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "106892",
+        "display": "insulin isophane, human 70 UNT/ML / insulin, regular, human 30 UNT/ML Injectable Suspension [Humulin]",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      }
+    ],
+    "risk_flags": {
+      "hypercapnia": true,
+      "beta_blocker": true
+    },
+    "discharge_note": "Synthea-generated copd discharge. Primary condition: Chronic obstructive bronchitis (disorder).",
+    "phone": "98450 00001",
+    "address": "Synthea-generated record, slot p01"
+  },
+  {
+    "id": "p02",
+    "name": "Denis Isaac Herman",
+    "age": 81,
+    "gender": "male",
+    "dob": "1945-06-07",
+    "conditions": [
+      {
+        "code": "40055000",
+        "display": "Chronic sinusitis (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "428251008",
+        "display": "History of appendectomy (situation)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "59621000",
+        "display": "Essential hypertension (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "237602007",
+        "display": "Metabolic syndrome X (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "271737000",
+        "display": "Anemia (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "431855005",
+        "display": "Chronic kidney disease stage 1 (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "127013003",
+        "display": "Disorder of kidney due to diabetes mellitus (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "431856006",
+        "display": "Chronic kidney disease stage 2 (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "90781000119102",
+        "display": "Microalbuminuria due to type 2 diabetes mellitus (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "91302008",
+        "display": "Sepsis (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "76571007",
+        "display": "Septic shock (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "75498004",
+        "display": "Acute bacterial sinusitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "10509002",
+        "display": "Acute bronchitis (disorder)",
+        "clinicalStatus": "resolved",
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "88805009",
+        "display": "Chronic congestive heart failure (disorder)",
+        "clinicalStatus": "active",
+        "system": "http://snomed.info/sct"
+      }
+    ],
+    "medications": [
+      {
+        "code": "106892",
+        "display": "insulin isophane, human 70 UNT/ML / insulin, regular, human 30 UNT/ML Injectable Suspension [Humulin]",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "310798",
+        "display": "Hydrochlorothiazide 25 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "314076",
+        "display": "lisinopril 10 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "308136",
+        "display": "amLODIPine 2.5 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "1043400",
+        "display": "Acetaminophen 21.7 MG/ML / Dextromethorphan Hydrobromide 1 MG/ML / doxylamine succinate 0.417 MG/ML Oral Solution",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      },
+      {
+        "code": "313988",
+        "display": "Furosemide 40 MG Oral Tablet",
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "beta_blocker": false
+      }
+    ],
+    "risk_flags": {},
+    "discharge_note": "Synthea-generated heart failure discharge. Primary condition: Chronic congestive heart failure (disorder).",
+    "phone": "98450 00001",
+    "address": "Synthea-generated record, slot p02"
+  }
+]

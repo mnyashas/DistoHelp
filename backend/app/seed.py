@@ -1,15 +1,19 @@
 """Seed at least 5 synthetic discharge profiles.
 
-Bundled profiles are authored to match Synthea's FHIR R4 output shape
-(SNOMED CT conditions, RxNorm medications, LOINC vitals). To regenerate
-real ones with Synthea instead:
+If `backend/app/seed_data/synthea_patients.json` exists (produced by
+`python scripts/import_synthea.py` from real Synthea output), it is used verbatim;
+otherwise the curated profiles below (authored to Synthea's FHIR output shape) are used.
 
   scripts/generate_synthea.ps1            # downloads & runs Synthea
-  python -m app.seed --from-synthea DIR   # converts export to our registry
+  python scripts/import_synthea.py        # picks 5 diverse patients from its output
 """
+import json
+from pathlib import Path
+
 from . import config, db, fhir_client
 
-PATIENTS = [
+_SYNTHEA_FILE = Path(__file__).parent / "seed_data" / "synthea_patients.json"
+PATIENTS = json.loads(_SYNTHEA_FILE.read_text(encoding="utf-8")) if _SYNTHEA_FILE.exists() else [
     {
         "id": "p01", "name": "Ramesh Hegde", "age": 68, "gender": "male", "dob": "1958-04-12",
         "phone": "98450 01001", "address": "12, 3rd Cross, Kumbar Lane, Davangere 577002",
@@ -101,35 +105,60 @@ def _fhir_patient_resource(p: dict) -> dict:
     }
 
 
+def _hapi_seed_async(jobs: list[tuple[str, dict]], patient_slots: dict[str, str]) -> None:
+    """Post seeded profiles to HAPI in a background thread — never blocks startup.
+    On any failure the local read-model remains the source of truth."""
+    import threading
+
+    def _job():
+        if not fhir_client.health_check():
+            print("[seed] HAPI unreachable — FHIR posts skipped (local SQLite is authoritative)")
+            return
+        for resource_type, resource in jobs:
+            try:
+                pid = fhir_client.create_resource(resource_type, resource, timeout=8.0)
+                if pid and resource_type == "Patient":
+                    ref_key = resource.get("id")
+                    if ref_key:
+                        fhir_ref = f"Patient/{pid}"
+                        db.execute("UPDATE patients SET fhir_ref=? WHERE id=?", (fhir_ref, ref_key))
+            except Exception:
+                continue
+
+    threading.Thread(target=_job, daemon=True, name="hapi-seed").start()
+
+
+
 def seed(post_to_hapi: bool = True) -> list[str]:
     seeded = []
+    fhir_jobs: list[tuple[str, dict]] = []
     for p in PATIENTS:
         exists = db.query_one("SELECT id FROM patients WHERE id=?", (p["id"],))
         if exists:
             seeded.append(p["id"])
             continue
+        resource = _fhir_patient_resource(p)
+        if post_to_hapi:
+            fhir_jobs.append(("Patient", resource))
+            fhir_ref_tmp = f"Patient/{p['id']}"
+            for c in p["conditions"]:
+                fhir_jobs.append(("Condition", {
+                    "resourceType": "Condition",
+                    "clinicalStatus": {"coding": [{
+                        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                        "code": c["clinicalStatus"]}]},
+                    "code": {"coding": [{"system": c["system"], "code": c["code"], "display": c["display"]}]},
+                    "subject": {"reference": fhir_ref_tmp},
+                }))
+            for m in p["medications"]:
+                fhir_jobs.append(("MedicationRequest", {
+                    "resourceType": "MedicationRequest",
+                    "status": "active",
+                    "intent": "order",
+                    "medicationCodeableConcept": {"coding": [{"system": m["system"], "code": m["code"], "display": m["display"]}]},
+                    "subject": {"reference": fhir_ref_tmp},
+                }))
         fhir_ref = None
-        if post_to_hapi and fhir_client.health_check():
-            pid = fhir_client.create_resource("Patient", _fhir_patient_resource(p))
-            if pid:
-                fhir_ref = f"Patient/{pid}"
-                for c in p["conditions"]:
-                    fhir_client.create_resource("Condition", {
-                        "resourceType": "Condition",
-                        "clinicalStatus": {"coding": [{
-                            "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                            "code": c["clinicalStatus"]}]},
-                        "code": {"coding": [{"system": c["system"], "code": c["code"], "display": c["display"]}]},
-                        "subject": {"reference": fhir_ref},
-                    })
-                for m in p["medications"]:
-                    fhir_client.create_resource("MedicationRequest", {
-                        "resourceType": "MedicationRequest",
-                        "status": "active",
-                        "intent": "order",
-                        "medicationCodeableConcept": {"coding": [{"system": m["system"], "code": m["code"], "display": m["display"]}]},
-                        "subject": {"reference": fhir_ref},
-                    })
         db.execute(
             "INSERT INTO patients(id,name,age,gender,dob,fhir_ref,conditions,medications,risk_flags,"
             "phone,address,medical_history,registered_on,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -139,6 +168,9 @@ def seed(post_to_hapi: bool = True) -> list[str]:
              _weeks_ago(10), db.now_iso()),
         )
         seeded.append(p["id"])
+    if fhir_jobs:
+        # patient_slots unused slot kept for readability of intent
+        _hapi_seed_async(fhir_jobs, {})
     db.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('patients_seeded',?)", ("yes",))
     from .seed_demo import seed_monitoring
     seed_monitoring()

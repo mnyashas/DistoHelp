@@ -94,7 +94,7 @@ def test_hypercapnia_scale2_scoring():
 def test_beta_blocker_blunting():
     c = client()
     for _ in range(3):
-        r = c.post("/api/vitals", json={"patient_id": "p02", "vital": "heart_rate", "value": 98})
+        r = c.post("/api/vitals", json={"patient_id": "p01", "vital": "heart_rate", "value": 98})
     assert r.json()["score"]["breakdown"]["hr"] == 0  # blunted by beta-blocker (would be 1)
 
 
