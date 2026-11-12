@@ -18,7 +18,7 @@ build/
 *.db
 *.sqlite3
 backend/data/
-data/bidmc/
+# BIDMC CSVs committed for offline demo (open access, see README)
 # HAPI FHIR CLI
 scripts/hapi-fhir-cli*
 # OS / editors

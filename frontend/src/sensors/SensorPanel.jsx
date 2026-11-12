@@ -3,20 +3,37 @@ import { AlertTriangle, Radio } from 'lucide-react';
 import { api } from '../services/api.js';
 import { fmt } from '../services/format.js';
 import { simulateReading } from './simulator.js';
+import CameraPanel from './CameraPanel.jsx';
 
 const MODES = [
   { id: 'manual', label: 'Manual entry' },
-  { id: 'simulated', label: 'Simulated sensor' },
+  { id: 'camera', label: 'Camera pulse (REAL)' },
   { id: 'esp32', label: 'ESP32 Wi-Fi sensor' },
+  { id: 'simulated', label: 'BIDMC replay / test' },
 ];
 
-export default function SensorPanel({ patient, onReading }) {
+export default function SensorPanel({ patient, onReading, onSaved }) {
   const [mode, setMode] = useState('manual');
   const [connected, setConnected] = useState(false);
   const [lastTs, setLastTs] = useState(null);
   const [alert, setAlert] = useState(false);
+  const [saving, setSaving] = useState(false);
   const wasConnected = useRef(false);
   const latest = patient.records.at(-1)?.vitals;
+
+  const saveCameraReading = async (vitals) => {
+    setSaving(true);
+    try {
+      await api('/sensors/readings', {
+        method: 'POST',
+        headers: { 'x-device-key': 'demo-esp32-key' },
+        body: { patient_id: patient.id, source: 'camera', vitals },
+      });
+      onSaved?.();
+    } catch { /* shown inline by CameraPanel state */ } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     wasConnected.current = false;
@@ -85,9 +102,14 @@ export default function SensorPanel({ patient, onReading }) {
           {mode === 'manual' ? 'Manual input active' : connected ? 'Connected' : 'Not connected'}
         </span>
         {lastTs && <span className="text-slate-500">Last data: {fmt(lastTs)}</span>}
+        {mode === 'camera' && (
+          <span className="rounded bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-800">
+            REAL fingertip photoplethysmography — measured, not simulated
+          </span>
+        )}
         {mode === 'simulated' && (
           <span className="rounded bg-amber-100 px-2 py-0.5 font-semibold text-amber-800">
-            SIMULATED values for testing only, not a medical measurement
+            BIDMC ICU replay / test signal — not a live patient
           </span>
         )}
         {mode === 'esp32' && (
@@ -96,6 +118,16 @@ export default function SensorPanel({ patient, onReading }) {
           </span>
         )}
       </div>
+
+      {mode === 'camera' && (
+        <div className="mt-3">
+          <CameraPanel
+            onReading={(r) => onReading(r, 'camera')}
+            onSave={saveCameraReading}
+            saving={saving}
+          />
+        </div>
+      )}
 
       {alert && (
         <div className="mt-3 flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">

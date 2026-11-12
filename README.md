@@ -77,6 +77,7 @@ HTML served at :5173, proxied `/api/patients` returns the 5 seeded patients.
 5. `POST /api/escalations {"alert_id": …}` → EN/HI/KN message + FHIR Flag/CommunicationRequest.
 6. `POST /api/scenarios/evaluate` → performance report: detection lead time & alerts/patient-day vs naive thresholds.
 7. `GET /api/hapi/status` → shows async HAPI worker stats (`observations_flushed`, queue depth).
+8. `POST /api/bidmc/replay {"record_id":"bidmc_03","patient_id":"p03","speed":600,"max_minutes":3}` → **real PhysioNet BIDMC ICU recordings** (committed to the repo; open access) replay through the pipeline with `source: "bidmc"`.
 
 ## Evaluation criteria coverage
 
@@ -88,4 +89,8 @@ Measured on the bundled deterministic replay (1-minute ticks, 24 h, 5 patients, 
 - **FHIR compliance**: Observations are LOINC-coded R4 Vital Signs stored in HAPI FHIR (verified end-to-end: `Observation/<id>` returned on store). Validated with `fhir.resources`.
 - **Explainability**: every alert carries `reading` + `rule` + `profile_fact` + `explanation`; artifact issues are device events, never clinical alerts.
 
-- FHIR endpoints: `POST /api/fhir/Observation`, storage in HAPI R4 R4B (Docker or public sandbox `hapi.fhir.org/baseR4`)
+- FHIR endpoints: `POST /api/fhir/Observation`, storage in HAPI R4 (Docker or public sandbox `hapi.fhir.org/baseR4`)
+
+**Data attribution**: BIDMC PPG and Respiration dataset (53 records), open access, PhysioNet —
+https://physionet.org/content/bidmc/1.0.0/ (Goldberger et al., *PhysioBank*). Committed for offline
+demo use. Synthea-generated/curated synthetic discharge profiles; no real patient data anywhere.
