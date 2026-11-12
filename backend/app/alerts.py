@@ -86,16 +86,18 @@ def generate_alert(score: dict, source: str = "monitoring") -> dict | None:
     )
     alert = get_alert(cur.lastrowid)
 
-    # Auto-notify emergency contacts when a patient goes critical (URGENT).
+    # Message emergency contacts when a patient goes off-baseline (review or urgent).
     # Best-effort: never let notification failure break monitoring.
-    if score["level"] == "urgent" and getattr(config, "NOTIFY_ON_CRITICAL", True):
+    if score["level"] in ("review", "urgent") and getattr(config, "NOTIFY_ON_CRITICAL", True):
         try:
             from . import notify
+            vital_name = constants.LOINC[code]["display"]
             notify.send_emergency(
                 patient_id,
-                f"URGENT - {profile.get('name', patient_id)}",
-                (f"{constants.LOINC[code]['display']} = {value} triggered a CRITICAL (NEWS2 "
-                 f"{score['total']}) alert. Please contact the patient or reach the care team now."),
+                "DIstoHelp: patient may be in danger",
+                (f"{profile.get('name', patient_id)} may be in danger — {vital_name} = {value} "
+                 f"(NEWS2 {score['total']}, {score['level']}). Please check on them right now. "
+                 f"If they seem seriously unwell, call emergency services."),
             )
         except Exception:
             pass

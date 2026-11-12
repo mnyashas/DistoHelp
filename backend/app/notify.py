@@ -21,6 +21,29 @@ NOTIFY_PROVIDER = os.getenv("NOTIFY_PROVIDER", "auto")  # auto|msg91|twilio_what
 TIMEOUT = 8.0
 
 
+def _twilio_account_sid() -> str:
+    return os.getenv("TWILIO_ACCOUNT_SID", "")
+
+
+def _twilio_auth():
+    """Prefer API-key auth (SK + secret); fall back to Account SID + Auth Token."""
+    sk, secret = os.getenv("TWILIO_API_KEY_SID"), os.getenv("TWILIO_API_KEY_SECRET")
+    if sk and secret:
+        return (sk, secret)
+    return (_twilio_account_sid(), os.getenv("TWILIO_AUTH_TOKEN"))
+
+
+def _twilio_ready() -> bool:
+    sk, secret = os.getenv("TWILIO_API_KEY_SID"), os.getenv("TWILIO_API_KEY_SECRET")
+    if sk and secret:
+        return True
+    return bool(_twilio_account_sid() and os.getenv("TWILIO_AUTH_TOKEN"))
+
+
+def _twilio_url():
+    return f"https://api.twilio.com/2010-04-01/Accounts/{_twilio_account_sid()}/Messages.json"
+
+
 def send_emergency(patient_id: str, title: str, message: str) -> list[dict]:
     """Send a panic/emergency notification to every active contact of patient_id.
     Returns per-contact delivery results. Falls back to 'screen' (log-only) on any error."""
@@ -74,7 +97,7 @@ def _pick_provider(contact: dict) -> str:
     prov = NOTIFY_PROVIDER.lower()
     if prov != "auto":
         return prov
-    if os.getenv("TWILIO_ACCOUNT_SID") and os.getenv("TWILIO_AUTH_TOKEN"):
+    if _twilio_ready():
         return "twilio_whatsapp"
     if os.getenv("MSG91_AUTH_KEY"):
         return "msg91"
@@ -135,13 +158,11 @@ def _send_twilio_whatsapp(phone: str, body: str) -> dict:
        default From is the shared sandbox number +14155238886, override with TWILIO_WA_FROM.
     Recipient must have opted in (sent the sandbox join, or a completed WhatsApp session),
     otherwise Twilio rejects with a 630xx error which is surfaced verbatim."""
-    sid = os.getenv("TWILIO_ACCOUNT_SID")
-    tok = os.getenv("TWILIO_AUTH_TOKEN")
     from_ = os.getenv("TWILIO_WA_FROM", "+14155238886")   # Twilio WhatsApp Sandbox shared number
     content_sid = os.getenv("TWILIO_WA_CONTENT_SID")
     content_vars = os.getenv("TWILIO_WA_CONTENT_VARIABLES")  # raw JSON string, optional
-    if not (sid and tok):
-        return {"status": "failed", "detail": "TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN not set"}
+    if not _twilio_ready():
+        return {"status": "failed", "detail": "TWILIO_API_KEY_SID/TWILIO_API_KEY_SECRET or TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN not set"}
     from_wa = from_ if from_.lower().startswith("whatsapp:") else f"whatsapp:{from_}"
     to = _e164(phone)
     to_wa = to if to.lower().startswith("whatsapp:") else f"whatsapp:{to}"
@@ -153,8 +174,7 @@ def _send_twilio_whatsapp(phone: str, body: str) -> dict:
     else:
         data["Body"] = body
     try:
-        r = httpx.post(f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
-                       data=data, auth=(sid, tok), timeout=TIMEOUT)
+        r = httpx.post(_twilio_url(), data=data, auth=_twilio_auth(), timeout=TIMEOUT)
         try:
             j = r.json()
         except Exception:
@@ -225,15 +245,13 @@ def _send_msg91(phone: str, message: str) -> dict:
 
 
 def _send_twilio(phone: str, body: str) -> dict:
-    sid = os.getenv("TWILIO_ACCOUNT_SID")
-    tok = os.getenv("TWILIO_AUTH_TOKEN")
     from_ = os.getenv("TWILIO_FROM")
-    if not (sid and tok and from_):
-        return {"status": "failed", "detail": "TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM not set"}
+    if not (_twilio_ready() and from_):
+        return {"status": "failed", "detail": "TWILIO_API_KEY_SID/SECRET (or AC/TOKEN) + TWILIO_FROM not set"}
     try:
-        r = httpx.post(f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
+        r = httpx.post(_twilio_url(),
                        data={"To": _e164(phone), "From": from_, "Body": body},
-                       auth=(sid, tok), timeout=TIMEOUT)
+                       auth=_twilio_auth(), timeout=TIMEOUT)
         j = r.json()
         return {"status": "sent" if r.status_code in (200, 201) else "failed",
                 "detail": j.get("status", j.get("message", ""))}

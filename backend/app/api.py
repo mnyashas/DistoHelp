@@ -429,9 +429,10 @@ def panic(p: PanicIn):
     active emergency contact for the patient over SMS/Telegram/MSG91 (provider-dependent)."""
     patient = _patient_or_404(p.patient_id)
     note = (p.note or "").strip()
-    message = (f"{patient['name']} (age {patient['age']}) pressed the PANIC button in DIstoHelp. "
-               f"{('Note: ' + note + '. ') if note else ''}"
-               f"Vitals may be deteriorating - call the patient immediately and contact the care team.")
+    message = (f"{patient['name']} may be in danger — they pressed the PANIC button. "
+               f"Please check on them right now. "
+               f"{('Note from them: ' + note + '. ') if note else ''}"
+               f"If they seem seriously unwell, call emergency services.")
 
     cur = db.execute(
         "INSERT INTO alerts(patient_id,level,rule,reading,profile_fact,explanation,score_total,source,created_at) "
@@ -445,7 +446,7 @@ def panic(p: PanicIn):
 
     results = notify.send_emergency(
         p.patient_id,
-        "DIstoHelp PANIC",
+        "DIstoHelp: patient may be in danger",
         message,
     )
     return {
