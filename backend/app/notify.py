@@ -66,18 +66,18 @@ def _msg91_phone(phone: str) -> str:
 
 def _pick_provider(contact: dict) -> str:
     """'auto' (default) resolves to the first *configured* provider:
-    msg91 -> twilio_whatsapp -> twilio -> telegram -> textbelt -> screen."""
+    twilio_whatsapp -> msg91 -> twilio -> telegram -> textbelt.
+    (Twilio WhatsApp first: it fails loudly when misconfigured, unlike MSG91 submit-time silence.)"""
     pref = (contact.get("via") or "").lower()
     if pref and pref != "auto":
         return pref
     prov = NOTIFY_PROVIDER.lower()
     if prov != "auto":
         return prov
+    if os.getenv("TWILIO_ACCOUNT_SID") and os.getenv("TWILIO_AUTH_TOKEN"):
+        return "twilio_whatsapp"
     if os.getenv("MSG91_AUTH_KEY"):
         return "msg91"
-    if os.getenv("TWILIO_ACCOUNT_SID") and os.getenv("TWILIO_AUTH_TOKEN"):
-        # WhatsApp sandbox first (user asked for WhatsApp); fall back to SMS if plain TWILIO_FROM is set
-        return "twilio_whatsapp"
     if os.getenv("TELEGRAM_BOT_TOKEN"):
         return "telegram"
     return "textbelt"  # works with zero config; 1 free SMS/day (not available for India)
@@ -127,26 +127,44 @@ def _send_telegram(phone: str, body: str) -> dict:
 
 
 def _send_twilio_whatsapp(phone: str, body: str) -> dict:
-    """Twilio WhatsApp Sandbox (free). The recipient must have sent the sandbox
-    `join <your-code>` message once, or Twilio rejects with an error we surface verbatim.
-    Sandbox From defaults to the shared public sandbox number; override with TWILIO_WA_FROM."""
+    """Twilio WhatsApp. Two modes:
+    1) ContentSid (approved content template, e.g. hospital-approved alert template) —
+       set TWILIO_WA_CONTENT_SID. Optional TWILIO_WA_CONTENT_VARIABLES as raw JSON,
+       e.g. {"1": "p02 Denis Isaac Herman needs urgent review"} — passed verbatim.
+    2) Free-form Body — only works with the WhatsApp Sandbox or inside a 24h session window;
+       default From is the shared sandbox number +14155238886, override with TWILIO_WA_FROM.
+    Recipient must have opted in (sent the sandbox join, or a completed WhatsApp session),
+    otherwise Twilio rejects with a 630xx error which is surfaced verbatim."""
     sid = os.getenv("TWILIO_ACCOUNT_SID")
     tok = os.getenv("TWILIO_AUTH_TOKEN")
     from_ = os.getenv("TWILIO_WA_FROM", "+14155238886")   # Twilio WhatsApp Sandbox shared number
+    content_sid = os.getenv("TWILIO_WA_CONTENT_SID")
+    content_vars = os.getenv("TWILIO_WA_CONTENT_VARIABLES")  # raw JSON string, optional
     if not (sid and tok):
         return {"status": "failed", "detail": "TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN not set"}
+    from_wa = from_ if from_.lower().startswith("whatsapp:") else f"whatsapp:{from_}"
     to = _e164(phone)
     to_wa = to if to.lower().startswith("whatsapp:") else f"whatsapp:{to}"
+    data = {"To": to_wa, "From": from_wa}
+    if content_sid:
+        data["ContentSid"] = content_sid
+        if content_vars:
+            data["ContentVariables"] = content_vars
+    else:
+        data["Body"] = body
     try:
         r = httpx.post(f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
-                       data={"To": to_wa, "From": f"whatsapp:{from_}", "Body": body},
-                       auth=(sid, tok), timeout=TIMEOUT)
-        j = r.json()
+                       data=data, auth=(sid, tok), timeout=TIMEOUT)
+        try:
+            j = r.json()
+        except Exception:
+            return {"status": "failed", "detail": f"HTTP {r.status_code}: {r.text[:120]}"}
         if r.status_code in (200, 201):
-            return {"status": "sent", "detail": f"twilio whatsapp sid={j.get('sid')}"}
-        msg = j.get("message", "unknown twilio error")
-        if "join" in str(msg).lower() or r.status_code == 63016:
-            msg = f"recipient has not joined your Twilio WhatsApp sandbox yet (send 'join <code>' from their WhatsApp to +14155238886). Twilio says: {msg}"
+            sid_ref = j.get("sid", "")
+            return {"status": "sent", "detail": f"twilio whatsapp sid={sid_ref}"}
+        msg = j.get("message", j.get("code", "unknown twilio error"))
+        if r.status_code == 63016 or "63016" in str(j.get("code", "")):
+            msg = f"recipient has not joined your Twilio WhatsApp sandbox yet (send 'join <code>' from their WhatsApp to your sandbox number). Twilio says: {msg}"
         return {"status": "failed", "detail": msg}
     except Exception as e:
         return {"status": "failed", "detail": str(e)}
