@@ -1,0 +1,16 @@
+{
+  "id": 17,
+  "patient_id": "p02",
+  "patient_name": "Lakshmi Rao",
+  "level": "review",
+  "rule": "NEWS2(standard) total=6 (base 5 + drift/check-in 1); trigger vital: 9279-1 scored 2 pt(s)",
+  "reading": { "loinc": "9279-1", "display": "Respiratory rate", "value": 23.4, "unit": "/min" },
+  "profile_fact": "on beta-blocker (Carvedilol) — HR thresholds +10 bpm",
+  "explanation": "Respiratory rate = 23.4/min triggered a REVIEW alert. Rule: NEWS2(standard) total=6 (base 5 + drift/check-in 1); trigger vital: 9279-1 scored 2 pt(s). Patient profile: on beta-blocker (Carvedilol) — HR thresholds +10 bpm. Beta-blocker on medication list — HR thresholds shifted +10 bpm Rolling-baseline drift ≥2σ in: rr (+1)",
+  "score_total": 6,
+  "status": "active",
+  "source": "simulator",
+  "created_at": "2026-11-12T10:15:30+00:00",
+  "acked_at": null,
+  "resolved_at": null
+}

@@ -1,0 +1,365 @@
+openapi: 3.0.3
+info:
+  title: DIstoHelp API
+  version: 1.0.0
+  description: |
+    Post-Discharge Deterioration Monitor (MineArena PS-03).
+    CLINICAL DECISION SUPPORT ONLY — NOT a medical diagnosis system.
+    All score/alert payloads must be shown with the disclaimer from GET /api/meta.
+servers:
+  - url: http://localhost:8000
+    description: Local dev (backend laptop)
+paths:
+  /api/health:
+    get:
+      summary: Liveness + HAPI FHIR reachability
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { status: {type: string}, hapi_fhir: {type: boolean}, disclaimer: {type: string} } } } } }
+  /api/meta:
+    get:
+      summary: Service metadata, disclaimer, alert levels, LOINC codes
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Meta" } } } }
+  /api/dashboard:
+    get:
+      summary: Overview for the clinician dashboard (all patients + latest status)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { patients: { type: array, items: { $ref: "#/components/schemas/DashboardPatient" } }, disclaimer: { type: string }, generated_at: { type: string } } } } } }
+  /api/patients:
+    get:
+      summary: List patients (id, demographics, conditions, meds, risk flags)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { patients: { type: array, items: { $ref: "#/components/schemas/Patient" } } } } } } }
+  /api/patients/{patient_id}:
+    get:
+      summary: Patient detail incl. latest score, recent alerts, device events
+      parameters: [ { $ref: "#/components/parameters/patientId" } ]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { allOf: [ { $ref: "#/components/schemas/Patient" }, { type: object, properties: { latest_score: { $ref: "#/components/schemas/Score" }, recent_alerts: { type: array, items: { $ref: "#/components/schemas/Alert" } } } } ] } } } }
+        "404": { description: Not found }
+  /api/patients/{patient_id}/vitals:
+    get:
+      summary: Vital-sign time series (per LOINC code) for charting
+      parameters:
+        - { $ref: "#/components/parameters/patientId" }
+        - { name: limit, in: query, schema: { type: integer, default: 240 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  patient_id: { type: string }
+                  series:
+                    type: object
+                    description: "Keys are LOINC codes (8867-4 HR, 2708-6 SpO2, 9279-1 RR, 8310-5 Temp)"
+                    additionalProperties:
+                      type: array
+                      items: { $ref: "#/components/schemas/VitalPoint" }
+  /api/patients/{patient_id}/score:
+    get:
+      summary: Recompute and return current NEWS2-style score with breakdown
+      parameters: [ { $ref: "#/components/parameters/patientId" } ]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Score" } } } }
+  /api/fhir/Observation:
+    post:
+      summary: Ingest a FHIR R4 Vital Signs Observation (requirement 3.1)
+      description: Stores in HAPI FHIR server + local read-model. Runs artifact filter, NEWS2 scoring, alerting.
+      requestBody:
+        required: true
+        content:
+          application/fhir+json:
+            schema: { $ref: "#/components/schemas/FHIRObservation" }
+      responses:
+        "200": { description: Ingested, content: { application/json: { schema: { $ref: "#/components/schemas/IngestResult" } } } }
+        "422": { description: Validation error (bad LOINC/structure) }
+  /api/vitals:
+    post:
+      summary: Simple vitals ingestion (frontend/demo friendly)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patient_id]
+              properties:
+                patient_id: { type: string, example: p02 }
+                vital: { type: string, enum: [heart_rate, respiratory_rate, spo2, temperature] }
+                loinc: { type: string, example: "8867-4" }
+                value: { type: number, nullable: true, description: "null = absent reading (probe removal)" }
+      responses:
+        "200": { description: Ingested, content: { application/json: { schema: { $ref: "#/components/schemas/IngestResult" } } } }
+  /api/alerts:
+    get:
+      summary: List alerts (filterable). Each alert explains reading + rule + profile fact.
+      parameters:
+        - { name: patient_id, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string, enum: [active, acknowledged, resolved] } }
+        - { name: limit, in: query, schema: { type: integer, default: 100 } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { alerts: { type: array, items: { $ref: "#/components/schemas/Alert" } } } } } } }
+  /api/alerts/{alert_id}/ack:
+    post: { summary: Acknowledge an alert, responses: { "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Alert" } } } } } }
+  /api/alerts/{alert_id}/resolve:
+    post: { summary: Resolve an alert, responses: { "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Alert" } } } } } }
+  /api/device-events:
+    get:
+      summary: Sensor-artifact events (probe_removal, flatline, motion_noise, implausible, dropout, missing_data)
+      parameters: [ { name: patient_id, in: query, schema: { type: string } } ]
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { device_events: { type: array, items: { type: object } } } } } } }
+  /api/missing-data:
+    get:
+      summary: Check all patients for stale device data; records events + Watch missing-data alerts
+      parameters: [ { name: max_minutes, in: query, schema: { type: number, default: 10 } } ]
+      responses: { "200": { description: OK } }
+  /api/checkins:
+    post:
+      summary: Patient daily symptom check-in (breathlessness/fever/dizziness)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patient_id]
+              properties:
+                patient_id: { type: string }
+                breathlessness: { type: integer, minimum: 0, maximum: 2, description: "0 none, 1 mild, 2 severe" }
+                fever: { type: integer, minimum: 0, maximum: 1 }
+                dizziness: { type: integer, minimum: 0, maximum: 2 }
+                notes: { type: string }
+      responses:
+        "200": { description: Saved; returns score modifier + recomputed score }
+    get:
+      summary: List check-ins
+      parameters: [ { name: patient_id, in: query, schema: { type: string } } ]
+      responses: { "200": { description: OK } }
+  /api/escalations:
+    post:
+      summary: Escalate an alert to the care team (FHIR Flag + CommunicationRequest + EN/HI/KN notification)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [alert_id], properties: { alert_id: { type: integer } } } } }
+      responses: { "200": { description: Escalation result with localized messages } }
+    get:
+      summary: List sent escalation notifications (incl. Kannada/Hindi text)
+      parameters: [ { name: patient_id, in: query, schema: { type: string } } ]
+      responses: { "200": { description: OK } }
+  /api/simulator/{patient_id}/start:
+    post:
+      summary: Start virtual wearable streaming for a patient
+      description: Scenarios — stable_recovery | slow_deterioration | sudden_spike | sensor_artifact | probe_removal | missing_data. rate_per_minute is the simulated feed rate.
+      parameters: [ { $ref: "#/components/parameters/patientId" } ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scenario: { type: string, default: slow_deterioration }
+                rate_per_minute: { type: number, default: 60 }
+                seed: { type: integer, default: 42 }
+      responses: { "200": { description: Started } }
+  /api/simulator/{patient_id}/stop:
+    post: { summary: Stop the simulator, parameters: [ { $ref: "#/components/parameters/patientId" } ], responses: { "200": { description: Stopped } } }
+  /api/simulator/status:
+    get:
+      summary: Simulator states + available scenarios
+      responses: { "200": { description: OK } }
+  /api/bidmc/records:
+    get:
+      summary: List available BIDMC records ("demo" bundled sample always available)
+      responses: { "200": { description: OK } }
+  /api/bidmc/replay:
+    post:
+      summary: Replay a BIDMC record into the ingestion API (requirement 3.2b)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [record_id, patient_id]
+              properties:
+                record_id: { type: string, example: bidmc_01 }
+                patient_id: { type: string }
+                speed: { type: number, default: 60, description: "60 = 60x playback; 1 = real-time" }
+                max_minutes: { type: number }
+      responses: { "200": { description: Replay started in background } }
+  /api/bidmc/status:
+    get: { summary: Replay progress, responses: { "200": { description: OK } } }
+  /api/scenarios:
+    get:
+      summary: List replay scenarios
+      responses: { "200": { description: OK } }
+  /api/scenarios/run:
+    post:
+      summary: Run one scenario in-memory; compare personalized vs naive thresholds
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scenario: { type: string, default: slow_deterioration }
+                patient_id: { type: string, default: p02 }
+                n_ticks: { type: integer, default: 1440 }
+                seed: { type: integer, default: 42 }
+      responses: { "200": { description: Scenario result with lead time + alerts/day } }
+  /api/scenarios/evaluate:
+    post:
+      summary: Run the full evaluation matrix (4 scenarios x 5 patients) and store the markdown report
+      responses: { "200": { description: Evaluation matrix + aggregate + report_markdown } }
+  /api/scenarios/report:
+    get:
+      summary: Latest stored performance report (markdown)
+      responses: { "200": { description: OK } }
+components:
+  parameters:
+    patientId:
+      name: patient_id
+      in: path
+      required: true
+      schema: { type: string, example: p02 }
+  schemas:
+    Meta:
+      type: object
+      properties:
+        service: { type: string }
+        version: { type: string }
+        disclaimer: { type: string }
+        alert_levels: { type: array, items: { type: string } }
+        loinc_codes: { type: object }
+        personalization_rules: { type: array, items: { type: string } }
+        websocket: { type: string }
+    VitalPoint:
+      type: object
+      properties:
+        t: { type: string, format: date-time }
+        value: { type: number, nullable: true }
+        artifact: { type: string, nullable: true }
+        source: { type: string }
+    Patient:
+      type: object
+      properties:
+        id: { type: string, example: p02 }
+        name: { type: string, example: "Lakshmi Rao" }
+        age: { type: integer }
+        gender: { type: string }
+        dob: { type: string }
+        fhir_ref: { type: string, nullable: true }
+        conditions:
+          type: array
+          items: { type: object, properties: { code: { type: string }, display: { type: string }, clinicalStatus: { type: string } } }
+        medications:
+          type: array
+          items: { type: object, properties: { code: { type: string }, display: { type: string }, beta_blocker: { type: boolean } } }
+        risk_flags:
+          type: object
+          description: "{hypercapnia: bool, beta_blocker: bool, on_oxygen: bool}"
+    DashboardPatient:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        age: { type: integer }
+        gender: { type: string }
+        conditions: { type: array, items: { type: object } }
+        risk_flags: { type: object }
+        latest_score: { type: integer, nullable: true }
+        latest_level: { type: string, enum: [none, watch, review, urgent] }
+        active_alerts: { type: integer }
+        urgent_alerts: { type: integer }
+    IngestResult:
+      type: object
+      properties:
+        patient_id: { type: string }
+        loinc: { type: string }
+        display: { type: string }
+        value: { type: number, nullable: true }
+        unit: { type: string }
+        artifact: { type: string, nullable: true, description: "null = clean; else probe_removal|flatline|motion_noise|implausible|missing_value" }
+        fhir_ref: { type: string, nullable: true }
+        hapi_ok: { type: boolean }
+        score: { $ref: "#/components/schemas/Score", nullable: true, description: "null when the reading was flagged as an artifact" }
+        alert: { $ref: "#/components/schemas/Alert", nullable: true }
+    Score:
+      type: object
+      properties:
+        patient_id: { type: string }
+        total: { type: integer }
+        base_total: { type: integer }
+        level: { type: string, enum: [none, watch, review, urgent] }
+        spo2_scale: { type: string, enum: [scale1, scale2] }
+        breakdown:
+          type: object
+          description: "Points per vital: {hr, spo2, rr, temp}"
+          properties:
+            hr: { type: integer }
+            spo2: { type: integer }
+            rr: { type: integer }
+            temp: { type: integer }
+        drift: { type: object, description: "Rolling per-patient z-scores vs baseline" }
+        checkin: { type: object }
+        notes: { type: array, items: { type: string }, description: "Human-readable personalization explanations" }
+        latest: { type: object, description: "Latest value per LOINC code" }
+        patient_name: { type: string }
+    Alert:
+      type: object
+      properties:
+        id: { type: integer }
+        patient_id: { type: string }
+        patient_name: { type: string }
+        level: { type: string, enum: [watch, review, urgent] }
+        rule: { type: string, description: "NEWS2 evaluation sentence that fired" }
+        reading:
+          type: object
+          description: "The triggering vital reading"
+          properties:
+            loinc: { type: string }
+            display: { type: string }
+            value: { type: number }
+            unit: { type: string }
+        profile_fact: { type: string, description: "Patient-specific fact that shaped the alert" }
+        explanation: { type: string, description: "Full human-readable explanation" }
+        score_total: { type: integer, nullable: true }
+        status: { type: string, enum: [active, acknowledged, resolved] }
+        source: { type: string }
+        created_at: { type: string }
+    FHIRObservation:
+      type: object
+      required: [resourceType, status, code, subject]
+      properties:
+        resourceType: { type: string, example: Observation }
+        status: { type: string, example: final }
+        category:
+          type: array
+          items: { type: object }
+        code:
+          type: object
+          properties:
+            coding:
+              type: array
+              items:
+                type: object
+                properties:
+                  system: { type: string, example: "http://loinc.org" }
+                  code: { type: string, enum: ["8867-4", "2708-6", "9279-1", "8310-5"] }
+                  display: { type: string }
+        subject:
+          type: object
+          properties: { reference: { type: string, example: "Patient/p02" } }
+        effectiveDateTime: { type: string, format: date-time }
+        valueQuantity:
+          type: object
+          properties:
+            value: { type: number }
+            unit: { type: string }
+            system: { type: string, example: "http://unitsofmeasure.org" }
+        dataAbsentReason:
+          type: object
+          description: "Alternative to valueQuantity when the reading is absent (probe removal)"

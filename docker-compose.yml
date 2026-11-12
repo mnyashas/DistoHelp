@@ -1,0 +1,20 @@
+version: "3.8"
+# HAPI FHIR R4 server. Run: docker compose up -d
+# UI available at http://localhost:8080/ (or /fhir for the base URL)
+services:
+  hapi-fhir:
+    image: hapiproject/hapi:latest
+    container_name: distohelp-hapi
+    ports:
+      - "8080:8080"
+    environment:
+      hapi.fhir.fhir_version: R4
+      hapi.fhir.server_address: http://localhost:8080/fhir
+      hapi.fhir.validation.requests_fail_on_warnings: "false"
+      spring.datasource.url: jdbc:h2:file:/data/hapi;DB_CLOSE_DELAY=-1
+      spring.jpa.properties.hibernate.dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect
+    volumes:
+      - hapi-data:/data
+    restart: unless-stopped
+volumes:
+  hapi-data:

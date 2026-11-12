@@ -1,0 +1,12 @@
+{
+  "patient_id": "p02",
+  "loinc": "9279-1",
+  "display": "Respiratory rate",
+  "value": 23.4,
+  "unit": "/min",
+  "artifact": null,
+  "fhir_ref": "Observation/8f3a2b1c",
+  "hapi_ok": true,
+  "score": { "patient_id": "p02", "total": 6, "level": "review", "spo2_scale": "scale1", "breakdown": { "hr": 0, "spo2": 1, "rr": 2, "temp": 2 } },
+  "alert": null
+}
