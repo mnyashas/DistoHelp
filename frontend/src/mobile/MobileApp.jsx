@@ -4,8 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Stethoscope, ShieldCheck, LogOut, Activity, Radio,
-  ChevronRight, HeartPulse, Wind, Thermometer, Droplets,
-  CheckCircle2, TriangleAlert,
+  TriangleAlert,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend,
@@ -39,6 +38,14 @@ const initials = (name = '') => {
   const p = String(name).trim().split(/\s+/);
   return (((p[0]?.[0] || '') + (p.at(-1)?.[0] || '')).toUpperCase().slice(0, 2)) || '?';
 };
+
+const LOINC_KEY = { '8867-4': 'hr', '2708-6': 'spo2', '9279-1': 'rr', '8310-5': 'temp' };
+function wsUrlForLive() {
+  const base = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || '';
+  if (base) return base.replace(/^http/, 'ws').replace(/\/$/, '') + '/ws/live';
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${proto}://${location.host}/ws/live`;
+}
 
 export default function MobileApp() {
   const [token, setToken] = useState(() => localStorage.getItem(PATIENT_TOKEN_KEY));
@@ -147,10 +154,48 @@ function Home({ onLogout }) {
   const [simOn, setSimOn] = useState(false);
   const [demo, setDemo] = useState('stable');
   const [ticks, setTicks] = useState(0);
+  const [wave, setWave] = useState([]);          // live stream, same shape as the dashboard
+  const [live, setLive] = useState(null);        // latest WS vital frame (score/level)
   const simRef = useRef(null);
+  const patientId = me?.patient?.id;
 
   const load = () => patientFetch('/patient/me').then(setMe).catch(() => {});
-  useEffect(() => { load(); const id = setInterval(load, 3000); return () => clearInterval(id); }, []);
+  useEffect(() => { load(); const id = setInterval(load, 10000); return () => clearInterval(id); }, []);
+
+  // live WebSocket feed — identical source the dashboard uses
+  useEffect(() => {
+    if (!patientId) return undefined;
+    let ws, retry;
+    const connect = () => {
+      ws = new WebSocket(wsUrlForLive());
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg.type === 'vital') {
+            const d = msg.data;
+            if (d.patient_id !== patientId || !LOINC_KEY[d.loinc]) return;
+            setLive(d);
+            setWave((arr) => {
+              const t = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              const key = LOINC_KEY[d.loinc];
+              const next = [...arr];
+              const last = next[next.length - 1];
+              const lastFull = last ? { hr: last.hr, spo2: last.spo2, rr: last.rr, temp: last.temp } : {};
+              if (last && last.t === t) {
+                next[next.length - 1] = { ...lastFull, ...last, [key]: d.value, score: d.score?.total ?? last.score };
+              } else {
+                next.push({ t, ...lastFull, [key]: d.value, score: d.score?.total ?? 0 });
+              }
+              return next.slice(-90);
+            });
+          }
+        } catch { /* ignore */ }
+      };
+      ws.onclose = () => { retry = setTimeout(connect, 1500); };
+    };
+    connect();
+    return () => { clearTimeout(retry); ws && ws.close(); };
+  }, [patientId]);
 
   // on-device simulated sensors -> posted to Render every 3s
   useEffect(() => {
@@ -180,15 +225,20 @@ function Home({ onLogout }) {
   }, [simOn, me?.patient?.id, demo]);
 
   const p = me?.patient;
+  const liveVitals = wave.length ? wave[wave.length - 1] : null;
   const latest = me?.records?.length ? me.records[me.records.length - 1] : null;
-  const news2 = latest?.news2?.total ?? null;
-  const level = RISK_KEY(latest?.news2?.risk?.level);
+  const news2 = live?.score?.total ?? latest?.news2?.total ?? null;
+  const level = RISK_KEY(live?.score?.level ?? latest?.news2?.risk?.level);
   const risk = RISK[level] ?? RISK.low;
-  const history = (me?.records ?? []).filter((r) => r.vitals?.heartRate != null && r.vitals?.spo2 != null).slice(-12);
-  const chart = history.map((r, i) => ({
-    i: i + 1, hr: Math.round(r.vitals.heartRate), spo2: Number(r.vitals.spo2),
-    rr: Math.round(r.vitals.respiratoryRate), temp: Number(r.vitals.temperature),
-  }));
+  const chart = wave.slice(-30);
+
+  // telemetry for the tiles: prefer the live WS frame, fall back to stored records
+  const tv = {
+    hr: liveVitals?.hr ?? latest?.vitals?.heartRate ?? null,
+    spo2: liveVitals?.spo2 ?? latest?.vitals?.spo2 ?? null,
+    rr: liveVitals?.rr ?? latest?.vitals?.respiratoryRate ?? null,
+    temp: liveVitals?.temp ?? latest?.vitals?.temperature ?? null,
+  };
 
   return (
     <div className="min-h-[100dvh] bg-gray-50 pb-6">
@@ -232,12 +282,12 @@ function Home({ onLogout }) {
               </div>
             </section>
 
-            {/* telemetry tiles */}
+            {/* telemetry tiles (live WS when flowing, else stored) */}
             <section className="grid grid-cols-4 gap-2">
-              <Tile label="HR" value={latest?.vitals?.heartRate != null ? Math.round(latest.vitals.heartRate) : null} unit="bpm" abnormal={latest?.vitals?.heartRate > 100} />
-              <Tile label="SpO₂" value={latest?.vitals?.spo2 != null ? Number(latest.vitals.spo2).toFixed(1) : null} unit="%" abnormal={latest?.vitals?.spo2 != null && latest.vitals.spo2 < 92} />
-              <Tile label="RR" value={latest?.vitals?.respiratoryRate != null ? Math.round(latest.vitals.respiratoryRate) : null} unit="/min" />
-              <Tile label="Temp" value={latest?.vitals?.temperature != null ? Number(latest.vitals.temperature).toFixed(1) : null} unit="°C" />
+              <Tile label="HR" value={tv.hr != null ? Math.round(tv.hr) : null} unit="bpm" abnormal={tv.hr != null && tv.hr > 100} />
+              <Tile label="SpO₂" value={tv.spo2 != null ? Number(tv.spo2).toFixed(1) : null} unit="%" abnormal={tv.spo2 != null && tv.spo2 < 92} />
+              <Tile label="RR" value={tv.rr != null ? Math.round(tv.rr) : null} unit="/min" />
+              <Tile label="Temp" value={tv.temp != null ? Number(tv.temp).toFixed(1) : null} unit="°C" />
             </section>
 
             {/* on-device simulator */}
@@ -267,27 +317,31 @@ function Home({ onLogout }) {
               )}
             </section>
 
-            {/* vitals trend */}
-            {chart.length > 1 && (
-              <section className="card p-4">
-                <h2 className="mb-2 flex items-center gap-2 text-sm font-bold"><Activity size={16} className="text-brand-500" /> Vital signs — recent trend</h2>
-                <div className="h-44">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chart} margin={{ top: 5, right: 4, left: -14, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="i" hide />
-                      <YAxis yAxisId="l" tick={{ fontSize: 10 }} domain={['dataMin - 5', 'dataMax + 5']} />
-                      <YAxis yAxisId="r" orientation="right" domain={[75, 100]} tick={{ fontSize: 10 }} />
-                      <Tooltip />
-                      <Legend verticalAlign="top" iconSize={9} wrapperStyle={{ fontSize: 10 }} />
-                      <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} connectNulls />
-                      <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} connectNulls />
-                      <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} connectNulls />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </section>
-            )}
+            {/* live telemetry — same live WS source the dashboard uses */}
+            <section className="card p-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 text-sm font-bold"><Activity size={16} className="text-brand-500" /> Live telemetry</h2>
+                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-emerald-700">
+                  <span className={`h-2 w-2 rounded-full ${wave.length ? 'animate-pulse bg-emerald-500' : 'bg-gray-300'}`} />
+                  {wave.length ? 'live' : 'waiting'}
+                </span>
+              </div>
+              <div className="h-40">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chart} margin={{ top: 5, right: 4, left: -14, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="t" tick={{ fontSize: 9 }} interval="preserveStartEnd" hide />
+                    <YAxis yAxisId="l" tick={{ fontSize: 10 }} domain={['dataMin - 8', 'dataMax + 8']} />
+                    <YAxis yAxisId="r" orientation="right" domain={[75, 100]} tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Legend verticalAlign="top" iconSize={9} wrapperStyle={{ fontSize: 10 }} />
+                    <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
+                    <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
+                    <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
 
             {/* latest warning */}
             {(me.alerts ?? []).length > 0 && (
