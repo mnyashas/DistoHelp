@@ -1,11 +1,17 @@
 // DIstoHelp Patient — mobile application (patient-only).
-// Wraps the same backend the website uses: patient OTP login, NEWS2 report,
-// on-device vitals simulation posted to the Render API, panic + emergency contacts.
+// Same visual system as the website patient portal: light theme, white cards,
+// brand accents, Outfit, .btn-primary / .input / .card. Posts the same data the web app does.
 import { useEffect, useRef, useState } from 'react';
 import {
-  Stethoscope, ShieldCheck, LogOut, Activity, TriangleAlert, Radio,
-  ChevronRight, CheckCircle2, Clock, HeartPulse, Wind, Thermometer, Droplets, UserRound,
+  Stethoscope, ShieldCheck, LogOut, Activity, Radio,
+  ChevronRight, HeartPulse, Wind, Thermometer, Droplets,
+  CheckCircle2, TriangleAlert,
 } from 'lucide-react';
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend,
+} from 'recharts';
+import { RISK } from '../components/ui.jsx';
+import { PanicButton, EmergencyContacts } from '../components/PanicButton.jsx';
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api';
 const DEVICE_KEY = 'demo-esp32-key';
@@ -17,20 +23,22 @@ async function patientFetch(path, { method = 'GET', body, headers: extra } = {})
   if (token) headers.Authorization = `Bearer ${token}`;
   if (extra) Object.assign(headers, extra);
   const res = await fetch(API + path, {
-    method,
-    headers,
+    method, headers,
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401 && token) {
-    localStorage.removeItem(PATIENT_TOKEN_KEY);
-  }
+  if (res.status === 401 && token) localStorage.removeItem(PATIENT_TOKEN_KEY);
   if (!res.ok) throw new Error(data.message || `Request failed (${res.status})`);
   return data;
 }
 
 const SIM_SEED = { hr: 76, spo2: 97, rr: 14, temp: 36.6 };
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const initials = (name = '') => {
+  const p = String(name).trim().split(/\s+/);
+  return (((p[0]?.[0] || '') + (p.at(-1)?.[0] || '')).toUpperCase().slice(0, 2)) || '?';
+};
 
 export default function MobileApp() {
   const [token, setToken] = useState(() => localStorage.getItem(PATIENT_TOKEN_KEY));
@@ -38,17 +46,17 @@ export default function MobileApp() {
   return <Login onLogin={(t) => { localStorage.setItem(PATIENT_TOKEN_KEY, t); setToken(t); }} />;
 }
 
-/* ---------------- LOGIN ---------------- */
+/* ---------------- LOGIN (mirrors portal sign-in) ---------------- */
 function Login({ onLogin }) {
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState('phone');
+  const [step, setStep] = useState('mobile');
   const [demoOtp, setDemoOtp] = useState('');
   const [patientName, setPatientName] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const sendOtp = async (e) => {
+  const send = async (e) => {
     e?.preventDefault();
     setBusy(true); setError('');
     try {
@@ -69,91 +77,75 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-slate-950 text-white">
-      {/* brand */}
-      <div className="flex items-center gap-2.5 px-5 pt-6">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-500 font-extrabold text-white">D</div>
-        <div>
-          <p className="text-[15px] font-bold leading-tight">DIstoHelp</p>
-          <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-teal-400">Patient companion</p>
+    <div className="min-h-[100dvh] bg-gray-50">
+      {/* hero panel */}
+      <div className="flex flex-col justify-between bg-gray-900 px-6 pb-8 pt-6 text-white">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-500"><Stethoscope size={22} /></div>
+          <div>
+            <p className="font-bold leading-tight">DIstoHelp</p>
+            <p className="text-[9px] uppercase tracking-widest text-brand-300">Patient companion</p>
+          </div>
+        </div>
+        <div className="mt-6">
+          <h1 className="text-3xl font-extrabold leading-tight">Your health, <span className="text-brand-300">explained.</span></h1>
+          <p className="mt-2 max-w-sm text-sm text-gray-300">Sign in with your registered mobile number to see your own report — vitals, early-warning score and what your care team sees.</p>
         </div>
       </div>
 
-      {/* hero */}
-      <div className="px-5 pt-6">
-        <h1 className="text-[34px] font-extrabold leading-[1.05] text-white">
-          Your health,<br /><span className="text-teal-400">in your pocket.</span>
-        </h1>
-        <p className="mt-3 max-w-[85%] text-[13px] leading-snug text-slate-300">
-          Sign in with your registered mobile number to see your vitals, early-warning score and alerts.
-        </p>
-        <p className="mt-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-amber-400/90">
-          <ShieldCheck size={12} /> Demo build · simulated OTP · not a medical device
-        </p>
-      </div>
+      {/* sign-in card */}
+      <div className="px-4 pb-10 pt-4">
+        <div className="card w-full p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-600"><ShieldCheck /></div>
+            <div><h2 className="text-lg font-bold">Patient sign in</h2><p className="text-xs text-gray-500">Registered patients only</p></div>
+          </div>
 
-      {/* form card */}
-      <div className="mt-6 flex-1 rounded-t-3xl bg-slate-900 px-5 pt-6 pb-8">
-        {step === 'phone' ? (
-          <form onSubmit={sendOtp} className="space-y-4">
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Registered mobile number</label>
-            <input
-              className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-4 text-center text-xl font-semibold tracking-widest text-white placeholder-slate-600 outline-none focus:border-teal-400"
-              inputMode="numeric" placeholder="10-digit mobile"
-              value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} required
-            />
-            <p className="rounded-xl bg-slate-800/60 p-2.5 text-[10px] text-slate-400">
-              Demo patients: <b className="text-slate-200">98450 01001</b> Beryl · <b>02002</b> Denis · <b>03003</b> Athena · <b>04004</b> April · <b>05005</b> Andre
-            </p>
-            {error && <p className="text-sm text-red-400">{error}</p>}
-            <button
-              type="submit" disabled={busy || mobile.length !== 10}
-              className="w-full rounded-2xl bg-teal-500 py-4 text-base font-black uppercase tracking-widest text-slate-950 transition active:scale-95 disabled:opacity-40"
-            >
-              {busy ? 'Sending…' : 'Send OTP'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={verify} className="space-y-4">
-            <p className="text-sm text-slate-300">Enter the OTP for <b className="text-white">{patientName}</b></p>
-            {demoOtp && <p className="rounded-xl bg-amber-500/15 p-3 text-sm text-amber-300">Simulated OTP: <b className="tracking-[0.3em]">{demoOtp}</b></p>}
-            <input
-              className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-4 text-center text-3xl font-black tracking-[0.4em] text-white placeholder-slate-600 outline-none focus:border-teal-400"
-              inputMode="numeric" placeholder="······" value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} required
-            />
-            {error && <p className="text-sm text-red-400">{error}</p>}
-            <button type="submit" disabled={busy || otp.length !== 6}
-              className="w-full rounded-2xl bg-teal-500 py-4 text-base font-black uppercase tracking-widest text-slate-950 transition active:scale-95 disabled:opacity-40">
-              {busy ? 'Verifying…' : 'View my report'}
-            </button>
-            <button type="button" className="w-full text-center text-sm text-slate-400 underline" onClick={() => { setStep('phone'); setOtp(''); setError(''); }}>
-              Change number
-            </button>
-          </form>
-        )}
-
-        <p className="mt-6 text-center text-[10px] uppercase tracking-widest text-slate-500">
-          Clinical decision support · not for medical emergencies — call 112 if unwell
+          {step === 'mobile' ? (
+            <form onSubmit={send} className="space-y-4">
+              <div>
+                <label className="label">Registered mobile number</label>
+                <input className="input tracking-widest" inputMode="numeric" placeholder="10-digit mobile"
+                  value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} required />
+                <p className="mt-2 rounded-xl bg-gray-50 p-2 text-[11px] text-gray-500">
+                  Demo patients: <b>98450 01001</b> (Beryl) · 02002 (Denis) · 03003 (Athena) · 04004 (April) · 05005 (Andre)
+                </p>
+              </div>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <button className="btn-primary w-full justify-center" disabled={busy || mobile.length !== 10}>
+                {busy ? 'Sending…' : 'Send OTP'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={verify} className="space-y-4">
+              <p className="text-sm text-gray-600">Enter the OTP for <b>{patientName}</b>.</p>
+              {demoOtp && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Simulated OTP: <b className="tracking-widest">{demoOtp}</b></p>}
+              <input className="input text-center text-2xl tracking-[0.5em]" inputMode="numeric" placeholder="······"
+                value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} required />
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <button className="btn-primary w-full justify-center" disabled={busy || otp.length !== 6}>
+                {busy ? 'Verifying…' : 'View my report'}
+              </button>
+              <button type="button" className="w-full text-sm text-brand-600 hover:underline"
+                onClick={() => { setStep('mobile'); setOtp(''); setError(''); }}>← Back</button>
+            </form>
+          )}
+        </div>
+        <p className="mt-4 text-center text-[10px] uppercase tracking-widest text-gray-400">
+          Clinical decision support — not a medical diagnosis system
         </p>
       </div>
     </div>
   );
 }
 
-/* ---------------- HOME ---------------- */
-const RISK_STYLE = {
-  low: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
-  'low-medium': 'border-yellow-500/40 bg-yellow-500/10 text-yellow-300',
-  medium: 'border-orange-500/40 bg-orange-500/10 text-orange-300',
-  high: 'border-red-500/50 bg-red-500/10 text-red-300',
-};
+/* ---------------- HOME (mirrors portal Report) ---------------- */
+const RISK_KEY = (level) => ({ low: 'low', 'low-medium': 'low-medium', medium: 'medium', high: 'high' }[level] ?? 'low');
 
 function Home({ onLogout }) {
   const [me, setMe] = useState(null);
-  const [mode, setMode] = useState('normal');     // 'normal' | null
   const [simOn, setSimOn] = useState(false);
-  const [demo, setDemo] = useState('stable');     // 'stable' | 'deteriorating'
+  const [demo, setDemo] = useState('stable');
   const [ticks, setTicks] = useState(0);
   const simRef = useRef(null);
 
@@ -190,191 +182,146 @@ function Home({ onLogout }) {
   const p = me?.patient;
   const latest = me?.records?.length ? me.records[me.records.length - 1] : null;
   const news2 = latest?.news2?.total ?? null;
-  const level = latest?.news2?.risk?.level ?? 'low';
-  const history = (me?.records ?? []).slice(-18);
-  const chart = history.map((r, i) => ({ i, hr: r.vitals.heartRate, spo2: r.vitals.spo2, rr: r.vitals.respiratoryRate, temp: r.vitals.temperature }));
+  const level = RISK_KEY(latest?.news2?.risk?.level);
+  const risk = RISK[level] ?? RISK.low;
+  const history = (me?.records ?? []).filter((r) => r.vitals?.heartRate != null && r.vitals?.spo2 != null).slice(-12);
+  const chart = history.map((r, i) => ({
+    i: i + 1, hr: Math.round(r.vitals.heartRate), spo2: Number(r.vitals.spo2),
+    rr: Math.round(r.vitals.respiratoryRate), temp: Number(r.vitals.temperature),
+  }));
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-slate-950 text-white">
-      {/* top bar */}
-      <header className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-4 py-3 backdrop-blur">
+    <div className="min-h-[100dvh] bg-gray-50 pb-6">
+      {/* sticky header (matches portal report) */}
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand-500 text-sm font-extrabold text-white">D</div>
-          <p className="text-[13px] font-bold">DIstoHelp <span className="text-teal-400">Patient</span></p>
+          <Stethoscope className="text-brand-600" size={20} />
+          <p className="text-sm font-bold leading-tight">My Health Report</p>
         </div>
-        <button onClick={onLogout} className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 active:scale-95">
+        <button onClick={onLogout} className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 transition hover:border-red-200 hover:text-red-600">
           <LogOut size={13} /> Sign out
         </button>
       </header>
 
-      {!p ? (
-        <div className="grid flex-1 place-items-center text-slate-400">Loading your report…</div>
-      ) : (
-        <main className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-24">
-          {/* identity + score */}
-          <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-            <div className="flex items-center gap-3">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-xl font-black text-white">
-                {initials(p.fullName)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-lg font-extrabold leading-tight">{p.fullName}</p>
-                <p className="text-[11px] text-slate-400">{p.id} · {p.age} yrs · {p.gender}</p>
-              </div>
-              <div className={`grid h-16 w-16 shrink-0 place-items-center rounded-2xl border text-center ${RISK_STYLE[level] ?? RISK_STYLE.low}`}>
-                <div>
-                  <p className="text-[8px] font-bold uppercase tracking-widest opacity-80">NEWS2</p>
-                  <p className="text-2xl font-black leading-none">{news2 ?? '—'}</p>
-                </div>
-              </div>
-            </div>
-            {p.primaryCondition && (
-              <p className="mt-3 inline-flex rounded-lg bg-amber-500/15 px-2.5 py-1 text-[11px] font-bold text-amber-300">{p.primaryCondition}</p>
-            )}
-          </section>
-
-          {/* telemetry tiles */}
-          <section className="grid grid-cols-4 gap-2 text-center">
-            <Tile icon={HeartPulse} label="HR" value={latest?.vitals?.heartRate} unit="bpm" tone="text-rose-400" />
-            <Tile icon={Droplets} label="SpO₂" value={latest?.vitals?.spo2} unit="%" tone="text-sky-400" />
-            <Tile icon={Wind} label="RR" value={latest?.vitals?.respiratoryRate} unit="/min" tone="text-orange-400" />
-            <Tile icon={Thermometer} label="Temp" value={latest?.vitals?.temperature != null ? Number(latest.vitals.temperature).toFixed(1) : null} unit="°C" tone="text-violet-400" />
-          </section>
-
-          {/* simulator */}
-          <section className="rounded-2xl border border-teal-500/30 bg-teal-500/5 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className={`grid h-9 w-9 place-items-center rounded-xl ${simOn ? 'bg-teal-500 text-slate-950' : 'bg-slate-800 text-teal-400'}`}><Radio size={18} /></span>
-                <div>
-                  <p className="text-[13px] font-extrabold uppercase tracking-widest text-teal-300">Device simulator</p>
-                  <p className="text-[10px] text-slate-400">{simOn ? `Simulating ${demo} · tick ${ticks}` : 'Feeds the hospital pipeline every 3 s'}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSimOn((s) => !s)}
-                className={`rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-widest transition active:scale-95 ${simOn ? 'bg-red-500 text-white' : 'bg-teal-500 text-slate-950'}`}
-              >
-                {simOn ? 'Stop' : 'Start'}
-              </button>
-            </div>
-            {simOn && (
-              <div className="mt-3 flex gap-2">
-                {['stable', 'deteriorating'].map((m) => (
-                  <button key={m} onClick={() => setDemo(m)}
-                    className={`flex-1 rounded-lg border px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest ${demo === m ? 'border-teal-400 bg-teal-500/15 text-teal-300' : 'border-slate-700 text-slate-400'}`}>
-                    {m}
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* recent trend — lightweight SVG, not a chart library (small bundle) */}
-          {chart.length > 1 && <TrendChart data={chart} />}
-
-          {/* alerts summary */}
-          {(me.alerts ?? []).length > 0 && (
-            <section className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-4">
-              <p className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest text-amber-300"><TriangleAlert size={14} /> Latest warning</p>
-              <p className="mt-1.5 text-[12px] leading-snug text-amber-100/80">{me.alerts[0].explanation}</p>
-            </section>
-          )}
-
-          {/* sign-off */}
-          <p className="pt-1 text-center text-[9px] font-semibold uppercase tracking-widest text-slate-600">
-            Synthetic / simulated data · clinical decision support · not a medical device
-          </p>
-        </main>
-      )}
-
-      {/* emergency footer */}
-      <PanicBar patientId={p?.id} patientName={p?.fullName} />
-    </div>
-  );
-}
-
-function rand(min, max) { return min + Math.random() * (max - min); }
-function initials(name = '') {
-  const parts = String(name).trim().split(/\s+/);
-  return ((parts[0]?.[0] || '') + (parts.at(-1)?.[0] || '')).toUpperCase().slice(0, 2) || '?';
-}
-
-function Tile({ icon: Icon, label, value, unit, tone }) {
-  return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 px-2 py-2.5">
-      <Icon size={14} className={`mx-auto ${tone}`} />
-      <p className="mt-1 text-[15px] font-extrabold leading-tight tabular-nums">{value ?? '––'}</p>
-      <p className="text-[8px] font-bold uppercase tracking-widest text-slate-500">{label} · {unit}</p>
-    </div>
-  );
-}
-
-function TrendChart({ data }) {
-  // minimal SVG sparkline for HR / SpO2
-  const hr = data.map((d) => d.hr);
-  const minHr = Math.min(...hr) - 2, maxHr = Math.max(...hr) + 2;
-  const pts = hr.map((v, i) => `${(i / (hr.length - 1)) * 100},${100 - ((v - minHr) / Math.max(1, maxHr - minHr)) * 100}`);
-  const path = `M${pts.join(' L')}`;
-  return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-      <p className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-slate-400">
-        <span>Heart rate · last {hr.length} readings</span>
-        <span className="tabular-nums text-teal-400">{hr.at(-1).toFixed(0)} bpm</span>
-      </p>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="mt-2 h-16 w-full">
-        <path d={path} fill="none" stroke="#2dd4bf" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-      </svg>
-    </section>
-  );
-}
-
-// emergency bar — the patient's panic action
-function PanicBar({ patientId, patientName }) {
-  const [confirming, setConfirming] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(null);
-
-  if (!patientId) return null;
-
-  const fire = async () => {
-    setSending(true);
-    try {
-      const r = await patientFetch('/panic', { method: 'POST', body: { patient_id: patientId } });
-      setSent(r);
-      setConfirming(false);
-    } catch (e) {
-      setSent({ error: e.message || 'Failed' });
-    } finally { setSending(false); }
-  };
-
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-red-900/50 bg-slate-950/95 px-4 pb-5 pt-3 backdrop-blur">
-      {!sent ? (
-        !confirming ? (
-          <button onClick={() => setConfirming(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-red-600 bg-red-600 py-4 text-base font-black uppercase tracking-[0.2em] text-white shadow-lg shadow-red-950 transition active:scale-95">
-            <TriangleAlert size={22} /> Panic
-          </button>
+      <main className="space-y-4 px-4 pt-4">
+        {!p ? (
+          <div className="grid place-items-center py-16 text-sm text-gray-500">Loading your report…</div>
         ) : (
-          <div className="rounded-2xl border-2 border-red-500 bg-red-950 p-3 text-center">
-            <p className="text-xs font-black uppercase tracking-widest text-red-300">Alert care team + emergency contacts?</p>
-            <div className="mt-2 flex gap-2">
-              <button onClick={fire} disabled={sending}
-                className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-black uppercase tracking-widest text-white active:scale-95 disabled:opacity-60">
-                {sending ? 'Sending…' : 'Yes, send'}
-              </button>
-              <button onClick={() => setConfirming(false)}
-                className="flex-1 rounded-xl border border-slate-600 py-3 text-sm font-bold text-slate-300">Cancel</button>
-            </div>
-          </div>
-        )
-      ) : (
-        <div className="rounded-2xl border border-emerald-600/50 bg-emerald-950 p-3 text-center text-xs text-emerald-200">
-          {sent.error ? `Couldn't send: ${sent.error}` : `Panic sent — care team alerted. Emergency contacts notified${sent.dispatched ? ` (${sent.dispatched})` : ''}.`}
-          <button onClick={() => setSent(null)} className="mt-1.5 block w-full text-[10px] font-bold uppercase tracking-widest text-emerald-400 underline">Dismiss</button>
-        </div>
-      )}
+          <>
+            {/* identity + score card */}
+            <section className="card flex items-center justify-between gap-4 p-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-500 text-xl font-extrabold text-white">{initials(p.fullName)}</div>
+                <div className="min-w-0">
+                  <p className="truncate text-lg font-extrabold leading-tight">{p.fullName}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500">{p.id} · {p.age} yrs · {p.gender}</p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {p.primaryCondition && <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-semibold text-amber-800">{p.primaryCondition}</span>}
+                    {p.medications?.some((m) => m.beta_blocker) && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-800">on beta-blocker</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="shrink-0 text-center">
+                <div className={`grid h-20 w-20 place-items-center rounded-2xl text-white shadow-theme-md ${risk.bar}`}>
+                  <div>
+                    <p className="text-[8px] font-semibold uppercase opacity-90">NEWS2</p>
+                    <p className="text-3xl font-black leading-none">{news2 ?? '—'}</p>
+                  </div>
+                </div>
+                <p className="mt-1 text-[10px] font-bold text-gray-700">{risk.label}</p>
+              </div>
+            </section>
+
+            {/* telemetry tiles */}
+            <section className="grid grid-cols-4 gap-2">
+              <Tile label="HR" value={latest?.vitals?.heartRate != null ? Math.round(latest.vitals.heartRate) : null} unit="bpm" abnormal={latest?.vitals?.heartRate > 100} />
+              <Tile label="SpO₂" value={latest?.vitals?.spo2 != null ? Number(latest.vitals.spo2).toFixed(1) : null} unit="%" abnormal={latest?.vitals?.spo2 != null && latest.vitals.spo2 < 92} />
+              <Tile label="RR" value={latest?.vitals?.respiratoryRate != null ? Math.round(latest.vitals.respiratoryRate) : null} unit="/min" />
+              <Tile label="Temp" value={latest?.vitals?.temperature != null ? Number(latest.vitals.temperature).toFixed(1) : null} unit="°C" />
+            </section>
+
+            {/* on-device simulator */}
+            <section className="card p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className={`grid h-10 w-10 place-items-center rounded-xl transition ${simOn ? 'bg-brand-500 text-white' : 'bg-brand-50 text-brand-600'}`}><Radio size={18} /></div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">Device simulator</p>
+                    <p className="text-[10px] text-gray-500">{simOn ? `Simulating · ${demo} · tick ${ticks}` : 'Streams vitals to the hospital pipeline every 3 s'}</p>
+                  </div>
+                </div>
+                <button onClick={() => setSimOn((s) => !s)}
+                  className={`btn-primary h-9 px-4 text-xs ${simOn ? '!from-red-500 !to-rose-500' : ''}`}>
+                  {simOn ? 'Stop' : 'Start'}
+                </button>
+              </div>
+              {simOn && (
+                <div className="mt-3 flex gap-2">
+                  {['stable', 'deteriorating'].map((m) => (
+                    <button key={m} onClick={() => setDemo(m)}
+                      className={`flex-1 rounded-xl border px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition ${demo === m ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-500'}`}>
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* vitals trend */}
+            {chart.length > 1 && (
+              <section className="card p-4">
+                <h2 className="mb-2 flex items-center gap-2 text-sm font-bold"><Activity size={16} className="text-brand-500" /> Vital signs — recent trend</h2>
+                <div className="h-44">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chart} margin={{ top: 5, right: 4, left: -14, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="i" hide />
+                      <YAxis yAxisId="l" tick={{ fontSize: 10 }} domain={['dataMin - 5', 'dataMax + 5']} />
+                      <YAxis yAxisId="r" orientation="right" domain={[75, 100]} tick={{ fontSize: 10 }} />
+                      <Tooltip />
+                      <Legend verticalAlign="top" iconSize={9} wrapperStyle={{ fontSize: 10 }} />
+                      <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} />
+                      <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} />
+                      <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            )}
+
+            {/* latest warning */}
+            {(me.alerts ?? []).length > 0 && (
+              <section className="card border-l-4 !border-l-amber-400 p-4">
+                <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-amber-700"><TriangleAlert size={13} /> Latest warning</p>
+                <p className="mt-1 line-clamp-2 text-xs text-gray-600">{me.alerts[0].explanation}</p>
+              </section>
+            )}
+
+            {/* emergency contacts + panic — same components as the portal */}
+            <EmergencyContacts patientId={p.id} patientName={p.fullName} />
+
+            <section className="card border-2 !border-red-200 p-4 text-center">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-red-700">In an emergency</p>
+              <p className="mb-3 text-[11px] text-gray-500">Press only if you need urgent help. Alerts your care team and texts every emergency contact on file.</p>
+              <PanicButton big patientId={p.id} patientName={p.fullName} />
+            </section>
+
+            <p className="pt-1 text-center text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+              Clinical decision support — not a medical diagnosis system
+            </p>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function Tile({ label, value, unit, abnormal }) {
+  return (
+    <div className={`rounded-xl border p-2.5 text-center ${abnormal ? 'border-red-300 bg-red-50' : 'border-gray-100 bg-gray-50'}`}>
+      <p className="text-[9px] font-semibold uppercase text-gray-500">{label}</p>
+      <p className={`text-lg font-extrabold tabular-nums leading-tight ${abnormal ? 'text-red-600' : 'text-gray-900'}`}>{value ?? '––'}</p>
+      <p className="text-[8px] text-gray-400">{unit}</p>
     </div>
   );
 }
