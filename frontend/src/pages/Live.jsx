@@ -63,10 +63,12 @@ export default function Live({ patientId }) {
               const key = LOINC_KEY[d.loinc];
               const next = [...arr];
               const last = next[next.length - 1];
+              // fill-forward: carry known vitals so the line never breaks over artifact gaps
+              const lastFull = last ? { hr: last.hr, spo2: last.spo2, rr: last.rr, temp: last.temp } : {};
               if (last && last.t === t) {
-                next[next.length - 1] = { ...last, [key]: d.value, score: d.score?.total ?? last.score };
+                next[next.length - 1] = { ...lastFull, ...last, [key]: d.value, score: d.score?.total ?? last.score };
               } else {
-                next.push({ t, [key]: d.value, score: d.score?.total ?? 0 });
+                next.push({ t, ...lastFull, [key]: d.value, score: d.score?.total ?? 0 });
               }
               return next.slice(-90);
             });
@@ -188,10 +190,10 @@ export default function Live({ patientId }) {
               <Tooltip />
               <Legend verticalAlign="top" iconSize={10} wrapperStyle={{ fontSize: 11 }} />
               <ReferenceLine yAxisId="l" y={120} stroke="#e11d48" strokeDasharray="4 4" />
-              <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2} dot={false} isAnimationActive={false} />
-              <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={2} dot={false} isAnimationActive={false} />
-              <Line yAxisId="l" type="monotone" dataKey="temp" name="Temp °C" stroke="#a855f7" strokeWidth={2} dot={false} isAnimationActive={false} />
-              <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2} dot={false} isAnimationActive={false} />
+              <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
+              <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
+              <Line yAxisId="l" type="monotone" dataKey="temp" name="Temp °C" stroke="#a855f7" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
+              <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         </div>

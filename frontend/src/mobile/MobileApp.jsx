@@ -280,9 +280,9 @@ function Home({ onLogout }) {
                       <YAxis yAxisId="r" orientation="right" domain={[75, 100]} tick={{ fontSize: 10 }} />
                       <Tooltip />
                       <Legend verticalAlign="top" iconSize={9} wrapperStyle={{ fontSize: 10 }} />
-                      <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} />
-                      <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} />
-                      <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} />
+                      <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} connectNulls />
+                      <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} connectNulls />
+                      <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} connectNulls />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

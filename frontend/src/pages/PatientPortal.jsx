@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Stethoscope, ShieldCheck, LogOut, Printer, CheckCircle2, ChevronRight, Info,
@@ -67,9 +67,9 @@ export default function PatientPortal() {
         </div>
         <div>
           <h1 className="text-4xl font-extrabold leading-tight">Your health, <span className="text-brand-300">explained.</span></h1>
-          <p className="mt-4 max-w-md text-gray-300">Sign in with your registered mobile number to see your own report — conditions, medicines, vital trends, early-warning score and what your care team sees.</p>
+          <p className="mt-4 max-w-md text-gray-300">Sign in with your registered mobile number to see your own report â€” conditions, medicines, vital trends, early-warning score and what your care team sees.</p>
         </div>
-        <p className="text-xs text-gray-400">Clinical decision support — not a medical diagnosis system.</p>
+        <p className="text-xs text-gray-400">Clinical decision support â€” not a medical diagnosis system.</p>
       </div>
 
       <div className="grid place-items-center bg-gray-50 p-6">
@@ -86,7 +86,7 @@ export default function PatientPortal() {
                 <input className="input tracking-widest" inputMode="numeric" placeholder="10-digit mobile"
                   value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))} required />
                 <p className="mt-2 rounded-xl bg-gray-50 p-2 text-xs text-gray-500">
-                  Demo patients: <b>98450 01001</b> (Beryl) · 02002 (Denis) · 03003 (Athena) · 04004 (April) · 05005 (Andre)
+                  Demo patients: <b>98450 01001</b> (Beryl) Â· 02002 (Denis) Â· 03003 (Athena) Â· 04004 (April) Â· 05005 (Andre)
                 </p>
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
@@ -97,11 +97,11 @@ export default function PatientPortal() {
             <form onSubmit={verify} className="space-y-4">
               <p className="text-sm text-gray-600">Enter the OTP for <b>{patientName}</b>.</p>
               {demoOtp && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Simulated OTP: <b className="tracking-widest">{demoOtp}</b></p>}
-              <input className="input text-center text-2xl tracking-[0.5em]" inputMode="numeric" placeholder="······"
+              <input className="input text-center text-2xl tracking-[0.5em]" inputMode="numeric" placeholder="Â·Â·Â·Â·Â·Â·"
                 value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} required />
               {error && <p className="text-sm text-red-600">{error}</p>}
               <button className="btn-primary w-full justify-center" disabled={busy || otp.length !== 6}>View my report</button>
-              <button type="button" className="w-full text-sm text-brand-600 hover:underline" onClick={() => { setStep('mobile'); setOtp(''); setError(''); }}>← Back</button>
+              <button type="button" className="w-full text-sm text-brand-600 hover:underline" onClick={() => { setStep('mobile'); setOtp(''); setError(''); }}>â† Back</button>
             </form>
           )}
         </div>
@@ -146,7 +146,7 @@ function Report({ token, onLogout }) {
       <header className="print:hidden sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white/90 px-6 py-3 backdrop-blur">
         <div className="flex items-center gap-3">
           <Stethoscope className="text-brand-600" />
-          <div><p className="text-sm font-bold leading-tight">My Health Report</p><p className="text-[10px] uppercase tracking-widest text-gray-500">DIstoHelp · post-discharge monitoring</p></div>
+          <div><p className="text-sm font-bold leading-tight">My Health Report</p><p className="text-[10px] uppercase tracking-widest text-gray-500">DIstoHelp Â· post-discharge monitoring</p></div>
         </div>
         <div className="flex items-center gap-2">
           <button className="btn-ghost" onClick={() => window.print()}><Printer size={16} /> Print / save PDF</button>
@@ -159,7 +159,7 @@ function Report({ token, onLogout }) {
         <section className="card">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs text-gray-500">{p.id} · age {p.age} · {p.gender}</p>
+              <p className="text-xs text-gray-500">{p.id} Â· age {p.age} Â· {p.gender}</p>
               <h1 className="text-3xl font-extrabold">{p.fullName}</h1>
               <div className="mt-2 flex flex-wrap gap-2">
                 {p.primaryCondition && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">{p.primaryCondition}</span>}
@@ -180,7 +180,7 @@ function Report({ token, onLogout }) {
           {latest && (
             <p className="mt-3 flex items-start gap-2 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
               <Info size={14} className="mt-0.5 shrink-0" />
-              Latest reading {new Date(latest.measuredAt).toLocaleString('en-IN')} · source: {latest.source} · {risk.clinical}
+              Latest reading {new Date(latest.measuredAt).toLocaleString('en-IN')} Â· source: {latest.source} Â· {risk.clinical}
             </p>
           )}
         </section>
@@ -190,7 +190,7 @@ function Report({ token, onLogout }) {
           <EmergencyContacts patientId={p.id} patientName={p.fullName} />
         </div>
 
-        {/* panic — always visible to the patient */}
+        {/* panic â€” always visible to the patient */}
         <section className="card print:hidden border-2 border-red-200">
           <h2 className="mb-1 flex items-center gap-2 font-bold text-red-700">In an emergency</h2>
           <p className="mb-2 text-xs text-gray-500">Press only if you need urgent help at home. This instantly alerts your care team and texts every emergency contact on file.</p>
@@ -199,7 +199,7 @@ function Report({ token, onLogout }) {
 
         {/* vitals trend */}
         <section className="card">
-          <h2 className="mb-2 font-bold">Vital signs — recent trend</h2>
+          <h2 className="mb-2 font-bold">Vital signs â€” recent trend</h2>
           <div className="h-56">
             {chart.length === 0 ? <p className="text-sm text-gray-500">No saved readings yet.</p> : (
               <ResponsiveContainer width="100%" height="100%">
@@ -210,10 +210,10 @@ function Report({ token, onLogout }) {
                   <YAxis yAxisId="r" orientation="right" domain={[80, 100]} tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend />
-                  <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line yAxisId="l" type="monotone" dataKey="temp" name="Temp °C" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} />
-                  <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpO₂ %" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line yAxisId="l" type="monotone" dataKey="hr" name="HR bpm" stroke="#0f766e" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                  <Line yAxisId="l" type="monotone" dataKey="rr" name="RR /min" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                  <Line yAxisId="l" type="monotone" dataKey="temp" name="Temp Â°C" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                  <Line yAxisId="r" type="monotone" dataKey="spo2" name="SpOâ‚‚ %" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -227,7 +227,7 @@ function Report({ token, onLogout }) {
             <ul className="divide-y divide-gray-100">
               {r.alerts.slice(0, 5).map((a) => (
                 <li key={a.id} className="py-2.5 text-sm">
-                  <p className="font-semibold capitalize">{a.level} · NEWS2 {a.score_total ?? '–'}</p>
+                  <p className="font-semibold capitalize">{a.level} Â· NEWS2 {a.score_total ?? 'â€“'}</p>
                   <p className="text-xs text-gray-600">{a.explanation}</p>
                 </li>
               ))}
@@ -236,12 +236,12 @@ function Report({ token, onLogout }) {
           <p className="mt-2 text-[11px] text-gray-400">Only your care team can acknowledge or clear these. Please call the hospital helpline if you feel much worse.</p>
         </section>
 
-        {/* self-monitor — only for user-added patients */}
+        {/* self-monitor â€” only for user-added patients */}
         {!isSeedPatient(p.id) && <SelfMonitor patientId={p.id} patientName={p.fullName} onSaved={load} />}
         {isSeedPatient(p.id) && (
           <section className="card text-sm text-slate-500">
             <h2 className="mb-1 font-bold text-slate-600">Readings & monitoring</h2>
-            <p>This is a simulated cohort supplied by your clinic for the demonstration. Measurements are recorded by the wearable monitor — you can see your history above; phone-based self-monitoring is disabled for this profile.</p>
+            <p>This is a simulated cohort supplied by your clinic for the demonstration. Measurements are recorded by the wearable monitor â€” you can see your history above; phone-based self-monitoring is disabled for this profile.</p>
           </section>
         )}
 
@@ -249,7 +249,7 @@ function Report({ token, onLogout }) {
         <section className="card print:hidden">
           <h2 className="mb-3 font-bold">How are you feeling today?</h2>
           {sent ? (
-            <p className="flex items-center gap-2 text-brand-700"><CheckCircle2 size={18} /> Thank you — your answers were shared with your care team.</p>
+            <p className="flex items-center gap-2 text-brand-700"><CheckCircle2 size={18} /> Thank you â€” your answers were shared with your care team.</p>
           ) : (
             <>
               <div className="grid gap-3 sm:grid-cols-3">
@@ -273,7 +273,7 @@ function Report({ token, onLogout }) {
         </section>
 
         <p className="text-center text-[11px] uppercase tracking-widest text-gray-400">
-          Clinical decision support only — not a medical diagnosis system
+          Clinical decision support only â€” not a medical diagnosis system
         </p>
       </main>
     </div>
@@ -327,7 +327,7 @@ function SelfMonitor({ patientId, patientName, onSaved }) {
       });
       setStreaming(true);
     } catch (e) {
-      setMsg(e.message || 'Bluetooth unavailable — needs Chrome/Edge and a BLE heart-rate band (HTTPS or localhost).');
+      setMsg(e.message || 'Bluetooth unavailable â€” needs Chrome/Edge and a BLE heart-rate band (HTTPS or localhost).');
     }
   };
   const stopBLE = () => {
@@ -380,8 +380,8 @@ function SelfMonitor({ patientId, patientName, onSaved }) {
         </div>
         <canvas ref={waveRef} width={300} height={88} className="w-full rounded-xl bg-slate-900" />
         <div className="text-center md:w-28">
-          <p className="text-5xl font-black tabular-nums text-navy-900 leading-none">{bpm ?? '––'}</p>
-          <p className="text-[9px] uppercase tracking-widest text-slate-400">bpm · live</p>
+          <p className="text-5xl font-black tabular-nums text-navy-900 leading-none">{bpm ?? 'â€“â€“'}</p>
+          <p className="text-[9px] uppercase tracking-widest text-slate-400">bpm Â· live</p>
           <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded bg-slate-200">
             <div className="h-full bg-teal-500" style={{ width: `${Math.round(quality * 100)}%` }} />
           </div>
@@ -391,12 +391,12 @@ function SelfMonitor({ patientId, patientName, onSaved }) {
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-slate-500">
           {streaming
-            ? ppgState === 'locked' ? `Reading pulse for ${patientName} · ${sent} synced · shows on your clinic's dashboard`
-              : ppgState === 'estimating' ? 'Reading pulse… hold steady — BPM will appear in a few seconds'
-              : ppgState === 'settling' ? 'Cover the ENTIRE rear lens and keep perfectly still…'
-              : ppgState === 'no-finger' ? 'No pulse detected — fingertip must fully cover camera, LED on'
-              : `Streaming pulse for ${patientName} · ${sent} synced`
-            : 'Place fingertip over the camera lens (or pair a BLE band) and start streaming — same NEWS2 scoring as the monitored patients.'}
+            ? ppgState === 'locked' ? `Reading pulse for ${patientName} Â· ${sent} synced Â· shows on your clinic's dashboard`
+              : ppgState === 'estimating' ? 'Reading pulseâ€¦ hold steady â€” BPM will appear in a few seconds'
+              : ppgState === 'settling' ? 'Cover the ENTIRE rear lens and keep perfectly stillâ€¦'
+              : ppgState === 'no-finger' ? 'No pulse detected â€” fingertip must fully cover camera, LED on'
+              : `Streaming pulse for ${patientName} Â· ${sent} synced`
+            : 'Place fingertip over the camera lens (or pair a BLE band) and start streaming â€” same NEWS2 scoring as the monitored patients.'}
         </p>
         <button className={`btn-primary ${streaming ? '!from-red-500 !to-rose-500' : ''}`} onClick={streaming ? stop : start}>
           {streaming ? 'Stop' : (<><Radio size={16} /> Start streaming</>)}
