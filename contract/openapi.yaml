@@ -37,6 +37,14 @@ paths:
       responses:
         "200": { description: OK, content: { application/json: { schema: { allOf: [ { $ref: "#/components/schemas/Patient" }, { type: object, properties: { latest_score: { $ref: "#/components/schemas/Score" }, recent_alerts: { type: array, items: { $ref: "#/components/schemas/Alert" } } } } ] } } } }
         "404": { description: Not found }
+  /api/patients/{patient_id}/report.pdf:
+    get:
+      summary: Whole-patient clinical report as PDF (primary condition, vitals + NEWS2 charts, readings, check-ins, alerts)
+      parameters: [ { name: patient_id, in: path, required: true, schema: { type: string } } ]
+      responses:
+        "200":
+          description: PDF file
+          content: { application/pdf: { schema: { type: string, format: binary } } }
   /api/patients/{patient_id}/vitals:
     get:
       summary: Vital-sign time series (per LOINC code) for charting

@@ -2,11 +2,11 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from . import (alerts, artifacts, bidmc, config, constants, db, escalation,
-               fhir_client, notify, pipeline, scenarios, scoring, seed, simulator, sim_engine)
+               fhir_client, notify, pipeline, report, scenarios, scoring, seed, simulator, sim_engine)
 
 router = APIRouter(prefix="/api")
 
@@ -350,6 +350,19 @@ def latest_report():
         return {"report_markdown": None, "hint": "POST /api/scenarios/evaluate first"}
     return {"report_markdown": row["report_md"], "aggregate": db.loads(row["summary"]),
             "created_at": row["created_at"]}
+
+
+# ---------- patient PDF report ----------
+@router.get("/patients/{patient_id}/report.pdf")
+def patient_report_pdf(patient_id: str):
+    """Whole-patient clinical report as a PDF: primary discharge condition, vitals
+    trend + NEWS2 charts, recent readings, check-ins, active alerts."""
+    _patient_or_404(patient_id)
+    content, filename = report.build_report(patient_id)
+    if not content:
+        raise HTTPException(404, "patient not found or report failed")
+    return Response(content=content, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
 # ---------- emergency contacts + panic ----------

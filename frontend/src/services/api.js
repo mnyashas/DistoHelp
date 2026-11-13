@@ -3,8 +3,25 @@
 const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api';
 
 export const getToken = () => localStorage.getItem('spm_token');
+export const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api';
 export const setToken = (token) =>
   token ? localStorage.setItem('spm_token', token) : localStorage.removeItem('spm_token');
+
+// Download an authenticated file (e.g. patient PDF) from the API.
+export async function downloadFile(path, filename) {
+  const token = getToken();
+  const res = await fetch(API_BASE + path, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'download';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export async function api(path, { method = 'GET', body, headers: extraHeaders } = {}) {
   const headers = { 'Content-Type': 'application/json' };
