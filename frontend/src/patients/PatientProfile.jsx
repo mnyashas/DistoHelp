@@ -12,7 +12,7 @@ import EnquirySection from '../enquiries/EnquirySection.jsx';
 import PatientForm from './PatientForm.jsx';
 import { fmt, initials } from '../services/format.js';
 import Live from '../pages/Live.jsx';
-import { PanicButton, EmergencyContacts } from '../components/PanicButton.jsx';
+import { EmergencyContacts } from '../components/PanicButton.jsx';
 
 const TABS = [
   { id: 'live', label: 'Live', icon: Activity },
@@ -142,10 +142,7 @@ export default function PatientProfile() {
       {tab === 'history' && <MonitoringHistory records={p.records} patientName={p.fullName} />}
       {tab === 'enquiries' && <EnquirySection patient={p} onSaved={load} />}
       {tab === 'emergency' && (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <PanicButton patientId={p.id} patientName={p.fullName} />
-          <EmergencyContacts patientId={p.id} patientName={p.fullName} />
-        </div>
+        <EmergencyContacts patientId={p.id} patientName={p.fullName} />
       )}
 
       {editing && (

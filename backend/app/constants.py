@@ -5,6 +5,8 @@ LOINC = {
     "2708-6": {"display": "Oxygen saturation in Arterial blood", "unit": "%", "system": "http://loinc.org"},
     "9279-1": {"display": "Respiratory rate", "unit": "/min", "system": "http://loinc.org"},
     "8310-5": {"display": "Body temperature", "unit": "Cel", "system": "http://loinc.org"},
+    "8480-6": {"display": "Systolic blood pressure", "unit": "mmHg", "system": "http://loinc.org"},
+    "8462-4": {"display": "Diastolic blood pressure", "unit": "mmHg", "system": "http://loinc.org"},
 }
 
 # Reverse lookup by short name (used by simple REST endpoints)
@@ -17,6 +19,10 @@ VITAL_BY_NAME = {
     "rr": "9279-1",
     "temperature": "8310-5",
     "temp": "8310-5",
+    "systolic": "8480-6",
+    "diastolic": "8462-4",
+    "systolic_bp": "8480-6",
+    "diastolic_bp": "8462-4",
 }
 
 # Implausible (sensor-error) ranges. Outside these -> artifact, never scored.
@@ -25,6 +31,8 @@ PLAUSIBLE = {
     "2708-6": (50.0, 100.0),  # 0 is the explicit probe-removal sentinel
     "9279-1": (4.0, 60.0),
     "8310-5": (29.0, 43.0),
+    "8480-6": (50.0, 260.0),
+    "8462-4": (20.0, 160.0),
 }
 
 NEWS2_CAPTION = "NEWS2-style early warning score (adjusted for the 4 monitored vitals)"

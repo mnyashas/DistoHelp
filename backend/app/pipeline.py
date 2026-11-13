@@ -126,13 +126,16 @@ def ingest_vital(patient_id: str, loinc: str, value: float | None, source: str) 
     score_id = scoring.persist_score(score)
     score["id"] = score_id
     alert = alerts.generate_alert(score, source=source)
+    bp_alert = _maybe_low_bp_alert(patient_id, source) if loinc in ("8480-6", "8462-4") else None
 
     payload = dict(result)
     payload["score"] = score
-    payload["alert"] = alert
+    payload["alert"] = alert or bp_alert
     _broadcast({"type": "vital", "data": {**result, "score": score, "alert": alert}})
     if alert:
         _broadcast({"type": "alert", "data": alert})
+    if bp_alert:
+        _broadcast({"type": "alert", "data": bp_alert})
     return payload
 
 
@@ -141,6 +144,61 @@ def _fhir_patient_id(patient_id: str) -> str | None:
     if row and row["fhir_ref"]:
         return row["fhir_ref"].split("/")[-1]
     return patient_id
+
+
+def _maybe_low_bp_alert(patient_id: str, source: str = "monitoring") -> dict | None:
+    """Dedicated hypotension watch. BP is deliberately NOT in the NEWS2 total —
+    this is a separate, explainable triggered rule (sys<=88 or dia<=56 -> review,
+    sys<=78 or dia<=48 -> urgent). Uses the same alert explainability + dedup + lifecycle."""
+    sbp = scoring.latest_per_vital(patient_id).get("8480-6")
+    dbp = scoring.latest_per_vital(patient_id).get("8462-4")
+    if sbp is None and dbp is None:
+        return None
+    level = None
+    if (sbp is not None and sbp <= 78) or (dbp is not None and dbp <= 48):
+        level = "urgent"
+    elif (sbp is not None and sbp <= 88) or (dbp is not None and dbp <= 56):
+        level = "review"
+    if not level:
+        return None
+
+    from . import config
+    profile = scoring.patient_profile(patient_id)
+    primary = ""
+    conds = profile.get("conditions") or []
+    if conds:
+        primary = str(conds[0].get("display") if isinstance(conds[0], dict) else conds[0])
+
+    rule = f"low_bp hypotension ({level}: sys<=88/dia<=56 review; sys<=78/dia<=48 urgent)"
+    profile_fact = f"discharge profile: {primary}" if primary else "no documented conditions"
+    reading = db.dumps({"loinc": "8480-6", "display": "Blood pressure",
+                        "value": {"systolic": sbp, "diastolic": dbp}, "unit": "mmHg"})
+    explanation = (f"Blood pressure {sbp}/{dbp} mmHg crossed hypotension thresholds. Rule: {rule}. "
+                   f"Patient profile: {profile_fact}. "
+                   f"HR may not rise enough to compensate (beta-blockade blunts the tachycardia) — recheck volume status and standing BP.")
+    if alerts._recent_duplicate(patient_id, level, rule, config.ALERT_DEDUP_MINUTES):
+        return None
+
+    cur = db.execute(
+        "INSERT INTO alerts(patient_id,level,rule,reading,profile_fact,explanation,score_total,source,created_at) "
+        "VALUES(?,?,?,?,?,?,?,?,?)",
+        (patient_id, level, rule, reading, profile_fact, explanation, None, source, db.now_iso()),
+    )
+    alert = alerts.get_alert(cur.lastrowid)
+
+    # hypotension -> message emergency contacts (NOTIFY_ON_CRITICAL gates the outbound message)
+    if level == "urgent" and getattr(config, "NOTIFY_ON_CRITICAL", True):
+        try:
+            from . import notify
+            notify.send_emergency(
+                patient_id,
+                "DIstoHelp: patient may be in danger",
+                (f"{profile.get('name', patient_id)} may be in danger — blood pressure {sbp}/{dbp} mmHg "
+                 f"(hypotension). Please check on them right now. If they seem seriously unwell, call emergency services."),
+            )
+        except Exception:
+            pass
+    return alert
 
 
 def _broadcast(msg: dict) -> None:

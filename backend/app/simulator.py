@@ -40,9 +40,11 @@ async def _run(patient_id: str, scenario: str, rate_per_minute: float, seed: int
 
 def _emit(patient_id: str, tick: dict) -> None:
     mapping = [("heart_rate", "8867-4"), ("respiratory_rate", "9279-1"),
-               ("spo2", "2708-6"), ("temperature", "8310-5")]
+               ("spo2", "2708-6"), ("temperature", "8310-5"),
+               ("systolic_bp", "8480-6"), ("diastolic_bp", "8462-4")]
     for name, loinc in mapping:
-        pipeline.ingest_vital(patient_id, loinc, tick[name], source="simulator")
+        if tick.get(name) is not None:
+            pipeline.ingest_vital(patient_id, loinc, tick[name], source="simulator")
 
 
 def start(patient_id: str, scenario: str, rate_per_minute: float = 60.0, seed: int = 42) -> dict:

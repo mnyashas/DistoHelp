@@ -7,7 +7,7 @@ import { api } from '../services/api.js';
 import { Spinner } from '../components/ui.jsx';
 import { connectBLE } from '../sensors/ble.js';
 
-const LOINC_KEY = { '8867-4': 'hr', '2708-6': 'spo2', '9279-1': 'rr', '8310-5': 'temp' };
+const LOINC_KEY = { '8867-4': 'hr', '2708-6': 'spo2', '9279-1': 'rr', '8310-5': 'temp', '8480-6': 'bpSys', '8462-4': 'bpDia' };
 const WS_PATH = '/ws/live';
 
 export function wsUrlForLive() {
@@ -105,8 +105,10 @@ export default function Live({ patientId }) {
     } catch { /* audio unavailable */ }
   };
 
+  const [scenario, setScenario] = useState('low_bp');
+
   const startDemo = async () => {
-    await api(`/simulator/${patientId}/start`, { method: 'POST', body: { scenario: 'slow_deterioration', rate_per_minute: 120 } }).catch(() => {});
+    await api(`/simulator/${patientId}/start`, { method: 'POST', body: { scenario, rate_per_minute: 120 } }).catch(() => {});
     setRunning(true);
   };
   const stopDemo = async () => {
@@ -143,15 +145,27 @@ export default function Live({ patientId }) {
           {patient.fullName} <span className="font-normal text-gray-400">· {patient.id}</span>
         </p>
         <div className="flex flex-wrap items-center gap-2">
+          <select
+            className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-semibold text-gray-600"
+            value={scenario}
+            onChange={(e) => setScenario(e.target.value)}
+            title="Scenario to run"
+          >
+            <option value="low_bp">Simulate: Low BP (hypotension)</option>
+            <option value="slow_deterioration">Simulate: Slow deterioration</option>
+            <option value="sudden_spike">Simulate: Sudden spike</option>
+            <option value="probe_removal">Simulate: Probe removal</option>
+            <option value="stable_recovery">Simulate: Stable recovery</option>
+          </select>
           {!running ? (
-            <button className="btn-ghost" onClick={startDemo}><Play size={16} /> Boost</button>
+            <button className="btn-primary !h-9 px-3" onClick={startDemo}><Play size={15} /> Start</button>
           ) : (
-            <button className="btn-ghost !text-red-600" onClick={stopDemo}><Square size={16} /> Stop sim</button>
+            <button className="btn-ghost !h-9 !border-red-300 !text-red-600" onClick={stopDemo}><Square size={15} /> Stop sim</button>
           )}
-          <button className="btn-ghost" onClick={() => setSound((s) => !s)} title="Toggle alert chime">
+          <button className="btn-ghost !h-9" onClick={() => setSound((s) => !s)} title="Toggle alert chime">
             {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
-          <button className="btn-ghost" onClick={connectWearable}><Bluetooth size={16} /> BLE</button>
+          <button className="btn-ghost !h-9" onClick={connectWearable}><Bluetooth size={16} /> BLE</button>
         </div>
       </div>
       {bleStatus && <p className="text-xs text-gray-500">{bleStatus}</p>}
@@ -184,10 +198,11 @@ export default function Live({ patientId }) {
       </div>
 
       {/* vitals tile + score */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Cell label="HR" value={vitals?.hr != null ? Number(vitals.hr).toFixed(0) : null} unit="bpm" />
         <Cell label="SpO₂" value={vitals?.spo2 != null ? Number(vitals.spo2).toFixed(1) : null} unit="%" alert={vitals?.spo2 != null && vitals.spo2 < 92} />
         <Cell label="RR" value={vitals?.rr != null ? Number(vitals.rr).toFixed(0) : null} unit="/min" />
+        <Cell label="BP" value={vitals?.bpSys != null ? `${Number(vitals.bpSys).toFixed(0)}/${vitals?.bpDia != null ? Number(vitals.bpDia).toFixed(0) : '––'}` : null} unit="mmHg" alert={vitals?.bpSys != null && vitals.bpSys <= 88} />
         <Cell label="NEWS2" value={vitals?.score != null ? vitals.score : null} unit={lvl} alert={lvl === 'urgent'} />
       </div>
 
