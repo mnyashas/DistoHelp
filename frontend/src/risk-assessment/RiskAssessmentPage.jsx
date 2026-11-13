@@ -14,7 +14,14 @@ const GROUPS = ['high', 'medium', 'low-medium', 'low'];
 
 export default function RiskAssessmentPage() {
   const [list, setList] = useState(null);
-  useEffect(() => { api('/patients').then(setList); }, []);
+  const [activeAlerts, setActiveAlerts] = useState([]);
+  useEffect(() => {
+    api('/patients').then(setList);
+    api('/alerts?status=active&limit=30').then((d) => setActiveAlerts(d.alerts || [])).catch(() => {});
+  }, []);
+
+  const onFire = new Set(activeAlerts.filter((a) => a.level === 'urgent' || a.level === 'review').map((a) => a.patient_id));
+  const pinFirst = (arr, idOf) => [...arr].sort((x, y) => (onFire.has(idOf(y)) ? 1 : 0) - (onFire.has(idOf(x)) ? 1 : 0));
 
   if (!list) return <Spinner />;
   const unassessed = list.filter((p) => !p.latest);
@@ -50,9 +57,10 @@ export default function RiskAssessmentPage() {
               <span className="text-sm text-gray-500">{items.length} patient(s)</span>
             </div>
             <ul className="divide-y divide-gray-100">
-              {items.map((p) => (
-                <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                  <Link to={`/patients/${p.id}`} className="font-medium hover:underline">
+              {pinFirst(items, (p) => p.id).map((p) => (
+                <li key={p.id} className={`flex flex-wrap items-center justify-between gap-3 rounded-xl px-2 py-3 ${onFire.has(p.id) ? 'row-urgent' : ''}`}>
+                  <Link to={`/patients/${p.id}?tab=live`} className="flex min-w-0 items-center gap-2 font-medium hover:underline">
+                    {onFire.has(p.id) && <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-600" />}
                     {p.fullName} <span className="text-xs text-gray-400">{p.id}</span>
                   </Link>
                   <span className="text-sm">

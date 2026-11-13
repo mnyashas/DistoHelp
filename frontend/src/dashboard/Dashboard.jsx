@@ -10,14 +10,32 @@ import { fmt } from '../services/format.js';
 
 export default function Dashboard() {
   const [s, setS] = useState(null);
+  const [activeAlerts, setActiveAlerts] = useState([]);
   const [q, setQ] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    api('/patients/summary').then(setS).catch(() => setS({ recent: [] }));
+    const load = () => Promise.all([
+      api('/patients/summary').then(setS).catch(() => setS((prev) => prev || { recent: [] })),
+      api('/alerts?status=active&limit=30').then((d) => setActiveAlerts(d.alerts || [])).catch(() => {}),
+    ]);
+    load();
+    const id = setInterval(load, 15000);   // reflect acknowledgements/new criticals without a reload
+    return () => clearInterval(id);
   }, []);
 
   if (!s) return <Spinner />;
+
+  // patients currently on fire: patient_id -> { level, name } (review/urgent only)
+  const onFire = new Map();
+  for (const a of activeAlerts) {
+    if (a.level !== 'urgent' && a.level !== 'review') continue;
+    const prev = onFire.get(a.patient_id);
+    if (!prev || a.level === 'urgent') onFire.set(a.patient_id, { level: a.level, name: a.patient_name });
+  }
+  const pinRank = (id) => (onFire.get(id)?.level === 'urgent' ? 3 : onFire.get(id)?.level === 'review' ? 2 : 0);
+  const sortedRecent = [...(s.recent || [])].sort((a, b) =>
+    pinRank(b.patientId) - pinRank(a.patientId) || new Date(b.measuredAt) - new Date(a.measuredAt));
 
   const pie = [
     { name: 'Low', value: s.low, color: '#22c55e' },
@@ -77,18 +95,55 @@ export default function Dashboard() {
         </div>
 
         <div className="card xl:col-span-2">
-          <h2 className="mb-3 font-semibold">Latest monitoring records</h2>
-          <ul className="divide-y divide-gray-100">
-            {s.recent?.map((r) => (
-              <li key={r.measuredAt + r.patientId} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <Link to={`/patients/${r.patientId}`} className="font-medium text-gray-800 hover:underline">
-                  {r.patientName}
+          <h2 className="mb-3 flex items-center justify-between font-semibold">
+            Latest monitoring records
+            {onFire.size > 0 && (
+              <span className="rounded-full bg-red-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">
+                {onFire.size} on fire
+              </span>
+            )}
+          </h2>
+
+          {/* critical now — always pinned above the feed */}
+          {onFire.size > 0 && (
+            <div className="mb-3 grid gap-2">
+              {[...onFire].map(([pid, info]) => (
+                <Link
+                  key={pid}
+                  to={`/patients/${pid}?tab=live`}
+                  className="row-urgent flex items-center justify-between gap-3 rounded-xl border-2 border-red-400 bg-red-50 px-4 py-3 transition hover:bg-red-100"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <Siren size={20} className="shrink-0 animate-pulse text-red-600" />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-black text-red-800">{info.name}</span>
+                      <span className="block text-[11px] font-bold uppercase tracking-widest text-red-500">
+                        {info.level === 'urgent' ? 'Urgent — needs attention now' : 'Review — check soon'}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-xs font-black uppercase tracking-widest text-red-600">Open →</span>
                 </Link>
-                <span className="text-xs text-gray-500">{fmt(r.measuredAt)}</span>
-                <span className="text-sm font-bold">Score {r.total}</span>
-                <RiskBadge level={r.risk} />
-              </li>
-            ))}
+              ))}
+            </div>
+          )}
+
+          <ul className="divide-y divide-gray-100">
+            {sortedRecent?.map((r) => {
+              const fire = !!onFire.get(r.patientId);
+              return (
+                <li key={r.measuredAt + r.patientId}
+                    className={`flex flex-wrap items-center justify-between gap-3 rounded-xl px-2 py-3 ${fire ? 'row-urgent' : ''}`}>
+                  <Link to={`/patients/${r.patientId}?tab=live`} className="flex min-w-0 items-center gap-2 font-medium text-gray-800 hover:underline">
+                    {fire && <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-600" />}
+                    {r.patientName}
+                  </Link>
+                  <span className="text-xs text-gray-500">{fmt(r.measuredAt)}</span>
+                  <span className="text-sm font-bold">Score {r.total}</span>
+                  <RiskBadge level={r.risk} />
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>

@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Users, ShieldAlert, Settings, LogOut, Watch, Activity,
 } from 'lucide-react';
 import { useAuth } from '../services/AuthContext.jsx';
+import EmergencyOverlay from './EmergencyOverlay.jsx';
 
 // TailAdmin-style grouped navigation for DIstoHelp
 const SECTIONS = [
@@ -56,6 +57,7 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      <EmergencyOverlay />
       {/* ── TailAdmin white sidebar (desktop) ── */}
       <aside className="sticky top-0 hidden h-screen w-[290px] shrink-0 flex-col border-e border-gray-200 bg-white px-5 py-6 md:flex">
         {/* logo */}

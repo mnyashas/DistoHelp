@@ -457,6 +457,13 @@ def panic(p: PanicIn):
     from .alerts import get_alert
     alert = get_alert(cur.lastrowid)
 
+    # push to every connected dashboard — triggers the red banner + siren
+    try:
+        from . import ws
+        ws.manager.broadcast_threadsafe({"type": "alert", "data": alert})
+    except Exception:
+        pass
+
     results = notify.send_emergency(
         p.patient_id,
         "DIstoHelp: patient may be in danger",
