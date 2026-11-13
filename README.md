@@ -77,6 +77,30 @@ The phone needs no app install — add the app to the home screen (Chrome → me
 for a fullscreen, PWA-standalone experience (manifest + icons committed). Re-run
 `python scripts/make_qr.py` whenever the laptop's Wi-Fi IP changes.
 
+## DIstoHelp Patient — Android app (APK)
+
+A patient-only Android app built on the same codebase (`VITE_MOBILE=1` build lives in
+`frontend/src/mobile/MobileApp.jsx`): patient OTP login only (demo OTP `123456`), live vitals,
+NEWS2 report, on-device **device simulator** (synthesizes HR/SpO₂/RR/Temp and posts them every 3 s
+to the same Render backend via `/api/sensors/readings` — works for the Synthea cohort and for
+user-added patients), emergency Panic button + contacts, fullscreen dark UI.
+
+**Download:** `DIstoHelp-patient.apk` (release attached at the repo root).
+
+**Build it yourself:**
+```
+cd frontend
+npm install
+npm run build:mobile            # VITE_API_URL=distohelp-ps03-api.onrender.com
+npx cap sync android
+cd android && ./gradlew.bat assembleDebug
+# APK lands at android\app\build\outputs\apk\debug\app-debug.apk
+```
+Requires JDK 17 and the Android SDK (platforms android-34+, build-tools 34+).
+Side-load with "Install unknown apps" enabled for your browser/files app.
+
+**Patient login (demo patients):** mobile `98450 01001` (Beryl) … `98450 05005` (Andre) · OTP `123456`.
+
 ## Demo script (6 minutes)
 
 1. Sign in at http://localhost:5173 → Dashboard: 5 **real Synthea-generated** patients (see
@@ -84,8 +108,7 @@ for a fullscreen, PWA-standalone experience (manifest + icons committed). Re-run
    250-patient Synthea run; regenerate anytime with `scripts/generate_synthea.ps1`).
    p01 Beryl (COPD → SpO₂ Scale 2 + metoprolol beta-blocker blunting, both rules on one patient),
    p02 Denis (81, post-sepsis CHF) is flagged High Risk (NEWS2 7).
-2. **Live Monitoring** (`/live`) → **Start demo streams**: p02 drifts into deterioration on the
-   telemetry grid, artifacts get suppressed, alert banner + chime fire, ack/resolve from the stream.
+2. **Patients → p02 → Live tab** — p02 drifts toward deterioration on the telemetry tile; artifacts get suppressed, the red emergency banner fires (whole dashboard flashes red), ack/resolve from the alert stream.
 3. Open **watch companion** (`/watch?p=p02`) on a phone on the same LAN — wrist UI streams live
    vitals over WebSocket; URGENT flashes + buzzes.
 4. Open **patient check-in** (`/patient`) — pick p02, report breathlessness=severe + fever →

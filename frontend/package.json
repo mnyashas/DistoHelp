@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:mobile": "vite build --mode mobile --outDir dist-mobile",
+    "cap:sync": "npm run build:mobile && cap sync android",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -16,6 +18,9 @@
     "recharts": "^2.13.3"
   },
   "devDependencies": {
+    "@capacitor/android": "^6.2.3",
+    "@capacitor/cli": "^6.2.3",
+    "@capacitor/core": "^6.2.3",
     "@vitejs/plugin-react": "^4.3.3",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
