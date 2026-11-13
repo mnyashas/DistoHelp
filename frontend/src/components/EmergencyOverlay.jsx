@@ -106,9 +106,10 @@ export default function EmergencyOverlay() {
               {n} active emergency{n > 1 ? 's' : ''}
             </p>
             <p className="truncate text-xs font-medium text-red-50">
-              {pending.map((a) => isPanic(a)
+              {pending.slice(0, 4).map((a) => isPanic(a)
                 ? `${a.patient_name || a.patient_id} pressed the PANIC button`
                 : `${a.patient_name || a.patient_id} — ${a.level?.toUpperCase()} alert`).join(' · ')}
+              {pending.length > 4 && ` · +${pending.length - 4} more`}
             </p>
           </div>
 
@@ -141,12 +142,12 @@ export default function EmergencyOverlay() {
           </div>
         </div>
 
-        {/* per-patient dismiss buttons */}
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 border-t border-white/25 px-4 py-1.5 md:px-6">
-          {pending.map((a) => (
-            <div key={a.id} className="flex items-center gap-2 rounded-lg bg-black/20 py-1 pl-2 pr-1 text-[11px] font-semibold text-white">
+        {/* per-patient dismiss buttons — bounded height; storms don't take over the screen */}
+        <div className="mx-auto flex max-h-24 max-w-7xl items-center gap-2 overflow-y-auto border-t border-white/25 px-4 py-1.5 md:px-6">
+          {pending.slice(0, 16).map((a) => (
+            <div key={a.id} className="flex shrink-0 items-center gap-2 rounded-lg bg-black/20 py-1 pl-2 pr-1 text-[11px] font-semibold text-white">
               <Siren size={12} />
-              <span className="max-w-64 truncate">
+              <span className="max-w-48 truncate">
                 {isPanic(a) ? `${a.patient_name || a.patient_id} — PANIC` : `${a.patient_name || a.patient_id} — ${a.level}`}
               </span>
               <button
@@ -159,6 +160,11 @@ export default function EmergencyOverlay() {
               </button>
             </div>
           ))}
+          {pending.length > 16 && (
+            <span className="shrink-0 rounded-lg bg-black/30 px-3 py-1.5 text-[11px] font-black text-white">
+              +{pending.length - 16} more
+            </span>
+          )}
         </div>
       </div>
     </>
