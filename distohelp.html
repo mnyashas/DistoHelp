@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DistoHelp — Personalized Post-Discharge Deterioration Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        medical: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .tab-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .tab-btn.active {
+            background-color: #0ea5e9;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.4);
+        }
+        
+        .tab-btn:not(.active):hover {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+        
+        .status-normal {
+            background-color: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
+        }
+        
+        .status-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+            border-color: #fcd34d;
+        }
+        
+        .status-critical {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+        }
+        
+        .vital-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .vital-card.normal { border-left-color: #22c55e; }
+        .vital-card.warning { border-left-color: #f59e0b; }
+        .vital-card.critical { border-left-color: #ef4444; }
+        
+        .vital-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 200px;
+            width: 100%;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            ring: 2px;
+            ring-color: #0ea5e9;
+            border-color: #0ea5e9;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse-alert {
+            animation: pulseAlert 2s infinite;
+        }
+        
+        @keyframes pulseAlert {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        
+        .trend-up { color: #ef4444; }
+        .trend-down { color: #3b82f6; }
+        .trend-stable { color: #22c55e; }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Title -->
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-medical-500 rounded-lg">
+                        <i data-lucide="heart-pulse" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">DistoHelp</h1>
+                        <p class="text-xs text-slate-500">Post-Discharge Deterioration Monitor</p>
+                    </div>
+                </div>
+                
+                <!-- Patient Profile Summary -->
+                <div class="hidden md:flex items-center gap-6 text-sm">
+                    <div class="text-right">
+                        <p class="text-slate-500">Patient</p>
+                        <p class="font-semibold text-slate-900" id="navPatientName">Sarah Mitchell</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-slate-500">Age</p>
+                        <p class="font-semibold text-slate-900" id="navPatientAge">67</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-slate-500">Discharged</p>
+                        <p class="font-semibold text-slate-900" id="navDischargeDate">2026-11-01</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-slate-500">Overall Risk</p>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium status-warning" id="navOverallRisk">⚠ Warning</span>
+                    </div>
+                </div>
+                
+                <!-- Mobile Patient Summary -->
+                <div class="md:hidden flex items-center gap-3">
+                    <div class="bg-medical-50 p-2 rounded-lg">
+                        <p class="text-xs text-slate-500">Patient</p>
+                        <p class="font-semibold text-slate-900 text-sm" id="navPatientNameMobile">Sarah Mitchell</p>
+                    </div>
+                    <span class="px-2 py-1 rounded-full text-xs font-medium status-warning" id="navOverallRiskMobile">⚠ Warning</span>
+                </div>
+                
+                <!-- Log New Vitals Button -->
+                <button onclick="showTab('quick-entry')" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-medical-600 text-white rounded-lg font-medium hover:bg-medical-700 transition-colors">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Log New Vitals
+                </button>
+                <button onclick="showTab('quick-entry')" class="sm:hidden p-2 bg-medical-600 text-white rounded-lg hover:bg-medical-700 transition-colors" aria-label="Log New Vitals">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tab Navigation -->
+    <div class="bg-white border-b border-slate-200 sticky top-16 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex gap-1 overflow-x-auto scrollbar-hide pb-1" role="tablist" id="tabList">
+                <button role="tab" onclick="showTab('overview')" class="tab-btn active px-4 py-3 text-sm font-medium whitespace-nowrap flex items-center gap-2" id="tab-overview">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    Vital Signs Panel
+                </button>
+                <button role="tab" onclick="showTab('cardiopulmonary')" class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap flex items-center gap-2" id="tab-cardiopulmonary">
+                    <i data-lucide="heart" class="w-4 h-4"></i>
+                    Cardiopulmonary & Temp
+                </button>
+                <button role="tab" onclick="showTab('anthropometrics')" class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap flex items-center gap-2" id="tab-anthropometrics">
+                    <i data-lucide="ruler" class="w-4 h-4"></i>
+                    Anthropometrics & Growth
+                </button>
+                <button role="tab" onclick="showTab('quick-entry')" class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap flex items-center gap-2" id="tab-quick-entry">
+                    <i data-lucide="clipboard-plus" class="w-4 h-4"></i>
+                    Quick Entry & Alerts
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Tab 1: Vital Signs Panel (Overview) -->
+        <section id="panel-overview" class="tab-panel fade-in" role="tabpanel" aria-labelledby="tab-overview">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Vital Signs Overview</h2>
+                <p class="text-slate-500 mt-1">Real-time monitoring of all tracked parameters with trend analysis</p>
+            </div>
+            
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-xl p-4 border border-slate-200">
+                    <p class="text-sm text-slate-500">Normal</p>
+                    <p class="text-3xl font-bold text-green-600" id="statNormal">7</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border border-slate-200">
+                    <p class="text-sm text-slate-500">Warning</p>
+                    <p class="text-3xl font-bold text-amber-600" id="statWarning">2</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border border-slate-200">
+                    <p class="text-sm text-slate-500">Critical</p>
+                    <p class="text-3xl font-bold text-red-600" id="statCritical">1</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border border-slate-200">
+                    <p class="text-sm text-slate-500">Last Updated</p>
+                    <p class="text-lg font-semibold text-slate-900" id="statLastUpdated">2 min ago</p>
+                </div>
+            </div>
+            
+            <!-- Vital Signs Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="vitalSignsGrid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Tab 2: Cardiopulmonary & Temperature -->
+        <section id="panel-cardiopulmonary" class="tab-panel hidden fade-in" role="tabpanel" aria-labelledby="tab-cardiopulmonary">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Cardiopulmonary & Temperature</h2>
+                <p class="text-slate-500 mt-1">Detailed monitoring with historical trends and interactive input</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Respiratory Rate -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 vital-card" id="card-rr">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="activity" class="w-5 h-5 text-medical-600"></i>
+                                Respiratory Rate
+                            </h3>
+                            <p class="text-sm text-slate-500">Breaths per minute</p>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium status-normal" id="badge-rr">Normal</span>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Current Value</label>
+                            <input type="number" id="input-rr" value="18" min="0" max="60" step="1" 
+                                class="input-field w-full px-3 py-2 border border-slate-300 rounded-lg text-lg font-semibold text-center"
+                                onchange="updateVital('rr', this.value)">
+                        </div>
+                        <div class="text-center">
+                            <label class="block text-xs text-slate-500 mb-1">Reference Range</label>
+                            <p class="text-sm text-slate-700 font-medium">12–20 br/min</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-rr"></canvas>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+                        <span>Trend: <span class="font-medium trend-stable" id="trend-rr">→ Stable</span></span>
+                        <span>Last: <span id="time-rr" class="font-medium">10:30 AM</span></span>
+                    </div>
+                </div>
+
+                <!-- Heart Rate -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 vital-card" id="card-hr">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="heart" class="w-5 h-5 text-red-500"></i>
+                                Heart Rate
+                            </h3>
+                            <p class="text-sm text-slate-500">Beats per minute</p>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium status-warning" id="badge-hr">Warning</span>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Current Value</label>
+                            <input type="number" id="input-hr" value="102" min="30" max="200" step="1"
+                                class="input-field w-full px-3 py-2 border border-slate-300 rounded-lg text-lg font-semibold text-center"
+                                onchange="updateVital('hr', this.value)">
+                        </div>
+                        <div class="text-center">
+                            <label class="block text-xs text-slate-500 mb-1">Reference Range</label>
+                            <p class="text-sm text-slate-700 font-medium">60–100 bpm</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-hr"></canvas>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+                        <span>Trend: <span class="font-medium trend-up" id="trend-hr">↑ Rising</span></span>
+                        <span>Last: <span id="time-hr" class="font-medium">10:25 AM</span></span>
+                    </div>
+                </div>
+
+                <!-- Oxygen Saturation -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 vital-card" id="card-spo2">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="droplet" class="w-5 h-5 text-blue-500"></i>
+                                Oxygen Saturation (SpO₂)
+                            </h3>
+                            <p class="text-sm text-slate-500">Percentage</p>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium status-warning" id="badge-spo2">Warning</span>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Current Value</label>
+                            <input type="number" id="input-spo2" value="93" min="70" max="100" step="1"
+                                class="input-field w-full px-3 py-2 border border-slate-300 rounded-lg text-lg font-semibold text-center"
+                                onchange="updateVital('spo2', this.value)">
+                        </div>
+                        <div class="text-center">
+                            <label class="block text-xs text-slate-500 mb-1">Reference Range</label>
+                            <p class="text-sm text-slate-700 font-medium">95–100%</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-spo2"></canvas>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+                        <span>Trend: <span class="font-medium trend-down" id="trend-spo2">↓ Falling</span></span>
+                        <span>Last: <span id="time-spo2" class="font-medium">10:20 AM</span></span>
+                    </div>
+                </div>
+
+                <!-- Body Temperature -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 vital-card" id="card-temp">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="thermometer" class="w-5 h-5 text-orange-500"></i>
+                                Body Temperature
+                            </h3>
+                            <p class="text-sm text-slate-500">Core temperature</p>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium status-normal" id="badge-temp">Normal</span>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Current Value</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="input-temp" value="37.2" min="30" max="42" step="0.1"
+                                    class="input-field flex-1 px-3 py-2 border border-slate-300 rounded-lg text-lg font-semibold text-center"
+                                    onchange="updateVital('temp', this.value)">
+                                <select id="tempUnit" onchange="convertTempUnit()" class="px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                                    <option value="c">°C</option>
+                                    <option value="f">°F</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <label class="block text-xs text-slate-500 mb-1">Reference Range</label>
+                            <p class="text-sm text-slate-700 font-medium">36.1–37.2°C / 97–99°F</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-temp"></canvas>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+                        <span>Trend: <span class="font-medium trend-stable" id="trend-temp">→ Stable</span></span>
+                        <span>Last: <span id="time-temp" class="font-medium">10:15 AM</span></span>
+                    </div>
+                </div>
+
+                <!-- Blood Pressure -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 vital-card lg:col-span-2" id="card-bp">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="gauge" class="w-5 h-5 text-purple-500"></i>
+                                Blood Pressure
+                            </h3>
+                            <p class="text-sm text-slate-500">Systolic / Diastolic (mmHg)</p>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium status-critical" id="badge-bp">Critical</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1">Systolic</label>
+                            <input type="number" id="input-bp-sys" value="158" min="60" max="250" step="1"
+                                class="input-field w-full px-3 py-2 border border-slate-300 rounded-lg text-lg font-semibold text-center"
+                                onchange="updateVital('bpSys', this.value)">
+                            <p class="text-xs text-slate-500 mt-1 text-center">Normal: < 120 mmHg</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500 mb-1">Diastolic</label>
+                            <input type="number" id="input-bp-dia" value="96" min="30" max="150" step="1"
+                                class="input-field w-full px-3 py-2 border border-slate-300 rounded-lg text-lg font-semibold text-center"
+                                onchange="updateVital('bpDia', this.value)">
+                            <p class="text-xs text-slate-500 mt-1 text-center">Normal: < 80 mmHg</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-xs text-slate-500 mb-2 text-center">Systolic Trend</p>
+                            <div class="chart-container" style="height: 150px;">
+                                <canvas id="chart-bp-sys"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 mb-2 text-center">Diastolic Trend</p>
+                            <div class="chart-container" style="height: 150px;">
+                                <canvas id="chart-bp-dia"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+                        <span>Trend: <span class="font-medium trend-up" id="trend-bp">↑ Rising</span></span>
+                        <span>Last: <span id="time-bp" class="font-medium">10:10 AM</span></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 3: Anthropometrics & Growth -->
+        <section id="panel-anthropometrics" class="tab-panel hidden fade-in" role="tabpanel" aria-labelledby="tab-anthropometrics">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Anthropometrics & Growth</h2>
+                <p class="text-slate-500 mt-1">Body measurements with automatic BMI calculation and growth tracking</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Body Height -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 vital-card" id="card-height">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="ruler" class="w-5 h-5 text-green-600"></i>
+                                Body Height
+                            </h3>
+                            <p class="text-sm text-slate-500">Standing height</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Current Value</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="input-height" value="165" min="50" max="250" step="0.1"
+                                    class="input-field flex-1 px-3 py-2 border border-slate-300 rounded-lg text-lg font-semibold text-center"
+                                    onchange="updateVital('height', this.value)">
+                                <select id="heightUnit" onchange="convertHeightUnit()" class="px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                                    <option value="cm">cm</option>
+                                    <option value="in">in</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-height"></canvas>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-500">
+                        Last measured: <span id="time-height" class="font-medium">2026-11-01</span>
+                    </div>
+                </div>
+
+                <!-- Body Weight -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 vital-card" id="card-weight">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="weight" class="w-5 h-5 text-amber-600"></i>
+                                Body Weight
+                            </h3>
+                            <p class="text-sm text-slate-500">Current weight</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Current Value</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="input-weight" value="78.5" min="20" max="300" step="0.1"
+                                    class="input-field flex-1 px-3 py-2 border border-slate-300 rounded-lg text-lg font-semibold text-center"
+                                    onchange="updateVital('weight', this.value)">
+                                <select id="weightUnit" onchange="convertWeightUnit()" class="px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                                    <option value="kg">kg</option>
+                                    <option value="lbs">lbs</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-weight"></canvas>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-500">
+                        Last measured: <span id="time-weight" class="font-medium">2026-11-10</span>
+                    </div>
+                </div>
+
+                <!-- Head Circumference -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 vital-card" id="card-head">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="circle-dot" class="w-5 h-5 text-purple-600"></i>
+                                Head Circumference
+                            </h3>
+                            <p class="text-sm text-slate-500">Maximum cranial circumference</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <label class="block text-xs text-slate-500 mb-1">Current Value</label>
+                            <input type="number" id="input-head" value="56.2" min="30" max="70" step="0.1"
+                                class="input-field w-full px-3 py-2 border border-slate-300 rounded-lg text-lg font-semibold text-center"
+                                onchange="updateVital('head', this.value)">
+                        </div>
+                        <div class="text-center">
+                            <label class="block text-xs text-slate-500 mb-1">Unit</label>
+                            <p class="text-sm text-slate-700 font-medium">cm</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-head"></canvas>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-500">
+                        Last measured: <span id="time-head" class="font-medium">2026-11-01</span>
+                    </div>
+                </div>
+
+                <!-- BMI Calculator -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 vital-card" id="card-bmi">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="calculator" class="w-5 h-5 text-medical-600"></i>
+                                Body Mass Index (BMI)
+                            </h3>
+                            <p class="text-sm text-slate-500">Auto-calculated from height & weight</p>
+                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium status-warning" id="badge-bmi">Overweight</span>
+                    </div>
+                    <div class="text-center mb-6">
+                        <div class="inline-block">
+                            <p class="text-5xl font-bold text-slate-900" id="bmiValue">28.8</p>
+                            <p class="text-sm text-slate-500">kg/m²</p>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                <div id="bmiIndicator" class="h-full bg-amber-500 rounded-full transition-all duration-500" style="width: 65%;"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span>Underweight<br><span class="font-medium"><18.5</span></span>
+                            <span>Normal<br><span class="font-medium">18.5–24.9</span></span>
+                            <span>Overweight<br><span class="font-medium">25–29.9</span></span>
+                            <span>Obese<br><span class="font-medium">≥30</span></span>
+                        </div>
+                    </div>
+                    <div class="bg-medical-50 rounded-lg p-4">
+                        <p class="text-sm text-medical-800"><strong>Category:</strong> <span id="bmiCategory" class="font-medium">Overweight (Pre-obese)</span></p>
+                        <p class="text-sm text-medical-800 mt-1"><strong>Health Risk:</strong> <span id="bmiRisk" class="font-medium">Increased</span></p>
+                    </div>
+                    <div class="mt-3 text-xs text-slate-500">
+                        Auto-updated: <span id="time-bmi" class="font-medium">Just now</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 4: Quick Entry & Deterioration Alerts -->
+        <section id="panel-quick-entry" class="tab-panel hidden fade-in" role="tabpanel" aria-labelledby="tab-quick-entry">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Quick Entry & Deterioration Alerts</h2>
+                <p class="text-slate-500 mt-1">Unified form for logging all parameters with real-time alert detection</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Quick Entry Form -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="clipboard-plus" class="w-5 h-5 text-medical-600"></i>
+                            Log New Vitals Reading
+                        </h3>
+                        <p class="text-sm text-slate-500 mb-6">Enter all parameters at once. Status badges update in real-time.</p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="quickEntryForm">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        
+                        <div class="mt-6 pt-4 border-t border-slate-200 flex gap-3 justify-end">
+                            <button onclick="clearQuickForm()" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4 inline mr-1"></i>
+                                Reset Form
+                            </button>
+                            <button onclick="saveQuickEntry()" class="px-6 py-2 bg-medical-600 text-white rounded-lg font-medium hover:bg-medical-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                Save All Vitals
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Alerts Panel -->
+                <div class="bg-white rounded-xl border border-slate-200 p-6 h-fit sticky top-24" id="alertsPanel">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i>
+                            Active Alerts
+                        </h3>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700" id="alertCount">3 Alerts</span>
+                    </div>
+                    
+                    <div class="space-y-3" id="alertsList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-slate-200">
+                        <h4 class="text-sm font-medium text-slate-900 mb-3">Alert Thresholds Reference</h4>
+                        <div class="space-y-2 text-xs" id="thresholdsList">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+                <p>DistoHelp v1.0.0 — Personalized Post-Discharge Deterioration Monitor</p>
+                <div class="flex items-center gap-4">
+                    <span class="flex items-center gap-1"><i data-lucide="shield-check" class="w-4 h-4"></i> HIPAA Compliant</span>
+                    <span class="flex items-center gap-1"><i data-lucide="clock" class="w-4 h-4"></i> Real-time Monitoring</span>
+                    <span class="flex items-center gap-1"><i data-lucide="database" class="w-4 h-4"></i> Encrypted Storage</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Save Confirmation Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+        <div class="bg-slate-900 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
+            <span id="toastMessage">Vitals saved successfully!</span>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // APPLICATION STATE & CONFIGURATION
+        // ============================================
+        
+        // Patient Data
+        const patient = {
+            name: "Sarah Mitchell",
+            age: 67,
+            dischargeDate: "2026-11-01",
+            condition: "COPD exacerbation, post-pneumonia"
+        };
+        
+        // Unit Preferences
+        const units = {
+            temp: 'c', // 'c' or 'f'
+            height: 'cm', // 'cm' or 'in'
+            weight: 'kg' // 'kg' or 'lbs'
+        };
+        
+        // Vital Signs Configuration with Reference Ranges
+        const vitalConfig = {
+            rr: { 
+                label: "Respiratory Rate", 
+                unit: "br/min", 
+                icon: "activity",
+                color: "medical",
+                normal: { min: 12, max: 20 },
+                warning: { min: 8, max: 25 },
+                critical: { min: 0, max: 30 },
+                precision: 0
+            },
+            hr: { 
+                label: "Heart Rate", 
+                unit: "bpm", 
+                icon: "heart",
+                color: "red",
+                normal: { min: 60, max: 100 },
+                warning: { min: 50, max: 110 },
+                critical: { min: 40, max: 130 },
+                precision: 0
+            },
+            spo2: { 
+                label: "Oxygen Saturation", 
+                unit: "%", 
+                icon: "droplet",
+                color: "blue",
+                normal: { min: 95, max: 100 },
+                warning: { min: 90, max: 94 },
+                critical: { min: 0, max: 89 },
+                precision: 0,
+                reverse: true // Lower is worse
+            },
+            temp: { 
+                label: "Body Temperature", 
+                unit: "°C", 
+                icon: "thermometer",
+                color: "orange",
+                normal: { min: 36.1, max: 37.2 },
+                warning: { min: 35.5, max: 38.0 },
+                critical: { min: 34.0, max: 39.5 },
+                precision: 1
+            },
+            bpSys: { 
+                label: "BP Systolic", 
+                unit: "mmHg", 
+                icon: "gauge",
+                color: "purple",
+                normal: { min: 90, max: 120 },
+                warning: { min: 121, max: 139 },
+                critical: { min: 140, max: 250 },
+                precision: 0
+            },
+            bpDia: { 
+                label: "BP Diastolic", 
+                unit: "mmHg", 
+                icon: "gauge",
+                color: "purple",
+                normal: { min: 60, max: 80 },
+                warning: { min: 81, max: 89 },
+                critical: { min: 90, max: 150 },
+                precision: 0
+            },
+            height: { 
+                label: "Body Height", 
+                unit: "cm", 
+                icon: "ruler",
+                color: "green",
+                normal: { min: 140, max: 200 },
+                warning: { min: 130, max: 210 },
+                critical: { min: 0, max: 250 },
+                precision: 1
+            },
+            weight: { 
+                label: "Body Weight", 
+                unit: "kg", 
+                icon: "weight",
+                color: "amber",
+                normal: { min: 50, max: 100 },
+                warning: { min: 40, max: 120 },
+                critical: { min: 30, max: 150 },
+                precision: 1
+            },
+            head: { 
+                label: "Head Circumference", 
+                unit: "cm", 
+                icon: "circle-dot",
+                color: "purple",
+                normal: { min: 52, max: 58 },
+                warning: { min: 50, max: 60 },
+                critical: { min: 0, max: 65 },
+                precision: 1
+            }
+        };
+        
+        // Current Vital Values (pre-filled dummy data)
+        let vitals = {
+            rr: 18,
+            hr: 102,
+            spo2: 93,
+            temp: 37.2,
+            bpSys: 158,
+            bpDia: 96,
+            height: 165,
+            weight: 78.5,
+            head: 56.2
+        };
+        
+        // Historical Data for Charts (last 7 readings)
+        const history = {
+            rr: [16, 17, 18, 17, 18, 18, 18],
+            hr: [88, 92, 95, 98, 100, 101, 102],
+            spo2: [97, 96, 95, 94, 94, 93, 93],
+            temp: [36.8, 36.9, 37.0, 37.1, 37.1, 37.2, 37.2],
+            bpSys: [132, 138, 142, 148, 152, 155, 158],
+            bpDia: [82, 84, 86, 88, 90, 93, 96],
+            height: [165, 165, 165, 165, 165, 165, 165],
+            weight: [76.2, 76.8, 77.1, 77.5, 77.9, 78.2, 78.5],
+            head: [56.0, 56.1, 56.1, 56.2, 56.2, 56.2, 56.2]
+        };
+        
+        // Chart instances
+        const charts = {};
+        const chartColors = {
+            medical: '#0ea5e9',
+            red: '#ef4444',
+            blue: '#3b82f6',
+            orange: '#f97316',
+            purple: '#a855f7',
+            green: '#22c55e',
+            amber: '#f59e0b'
+        };
+        
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        
+        function getStatus(key, value) {
+            const config = vitalConfig[key];
+            if (!config) return 'normal';
+            
+            const numValue = parseFloat(value);
+            if (isNaN(numValue)) return 'normal';
+            
+            if (config.reverse) {
+                // For SpO2, lower is worse
+                if (numValue <= config.critical.max) return 'critical';
+                if (numValue <= config.warning.max) return 'warning';
+                return 'normal';
+            } else {
+                if (numValue >= config.critical.min && numValue <= config.critical.max) return 'critical';
+                if (numValue >= config.warning.min && numValue <= config.warning.max) return 'warning';
+                if (numValue >= config.normal.min && numValue <= config.normal.max) return 'normal';
+                // Outside all ranges
+                if (numValue < config.normal.min) return 'warning';
+                return 'critical';
+            }
+        }
+        
+        function getStatusClass(status) {
+            switch(status) {
+                case 'normal': return 'status-normal';
+                case 'warning': return 'status-warning';
+                case 'critical': return 'status-critical';
+                default: return 'status-normal';
+            }
+        }
+        
+        function getStatusLabel(status) {
+            switch(status) {
+                case 'normal': return 'Normal';
+                case 'warning': return 'Warning';
+                case 'critical': return 'Critical';
+                default: return 'Normal';
+            }
+        }
+        
+        function getTrend(key) {
+            const hist = history[key];
+            if (!hist || hist.length < 2) return { label: '→ Stable', class: 'trend-stable' };
+            
+            const current = hist[hist.length - 1];
+            const previous = hist[hist.length - 2];
+            const diff = current - previous;
+            const threshold = Math.abs(current * 0.02); // 2% threshold
+            
+            if (Math.abs(diff) < threshold) {
+                return { label: '→ Stable', class: 'trend-stable' };
+            } else if (diff > 0) {
+                return { label: '↑ Rising', class: 'trend-up' };
+            } else {
+                return { label: '↓ Falling', class: 'trend-down' };
+            }
+        }
+        
+        function formatValue(key, value) {
+            const config = vitalConfig[key];
+            if (!config) return value;
+            const num = parseFloat(value);
+            if (isNaN(num)) return value;
+            return num.toFixed(config.precision);
+        }
+        
+        function getCurrentTime() {
+            return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+        
+        // ============================================
+        // UNIT CONVERSION
+        // ============================================
+        
+        function convertTempUnit() {
+            const unit = document.getElementById('tempUnit').value;
+            const input = document.getElementById('input-temp');
+            const currentValue = parseFloat(input.value);
+            
+            if (units.temp === 'c' && unit === 'f') {
+                // C to F
+                input.value = (currentValue * 9/5 + 32).toFixed(1);
+                vitalConfig.temp.unit = '°F';
+                vitalConfig.temp.normal = { min: 97, max: 99 };
+                vitalConfig.temp.warning = { min: 95.9, max: 100.4 };
+                vitalConfig.temp.critical = { min: 93.2, max: 103.1 };
+            } else if (units.temp === 'f' && unit === 'c') {
+                // F to C
+                input.value = ((currentValue - 32) * 5/9).toFixed(1);
+                vitalConfig.temp.unit = '°C';
+                vitalConfig.temp.normal = { min: 36.1, max: 37.2 };
+                vitalConfig.temp.warning = { min: 35.5, max: 38.0 };
+                vitalConfig.temp.critical = { min: 34.0, max: 39.5 };
+            }
+            units.temp = unit;
+            updateVital('temp', input.value);
+        }
+        
+        function convertHeightUnit() {
+            const unit = document.getElementById('heightUnit').value;
+            const input = document.getElementById('input-height');
+            const currentValue = parseFloat(input.value);
+            
+            if (units.height === 'cm' && unit === 'in') {
+                input.value = (currentValue / 2.54).toFixed(1);
+                vitalConfig.height.unit = 'in';
+            } else if (units.height === 'in' && unit === 'cm') {
+                input.value = (currentValue * 2.54).toFixed(1);
+                vitalConfig.height.unit = 'cm';
+            }
+            units.height = unit;
+            updateVital('height', input.value);
+        }
+        
+        function convertWeightUnit() {
+            const unit = document.getElementById('weightUnit').value;
+            const input = document.getElementById('input-weight');
+            const currentValue = parseFloat(input.value);
+            
+            if (units.weight === 'kg' && unit === 'lbs') {
+                input.value = (currentValue * 2.20462).toFixed(1);
+                vitalConfig.weight.unit = 'lbs';
+            } else if (units.weight === 'lbs' && unit === 'kg') {
+                input.value = (currentValue / 2.20462).toFixed(1);
+                vitalConfig.weight.unit = 'kg';
+            }
+            units.weight = unit;
+            updateVital('weight', input.value);
+        }
+        
+        // ============================================
+        // BMI CALCULATION
+        // ============================================
+        
+        function calculateBMI() {
+            let heightM, weightKg;
+            
+            if (units.height === 'cm') {
+                heightM = vitals.height / 100;
+            } else {
+                heightM = (vitals.height * 2.54) / 100;
+            }
+            
+            if (units.weight === 'kg') {
+                weightKg = vitals.weight;
+            } else {
+                weightKg = vitals.weight / 2.20462;
+            }
+            
+            const bmi = weightKg / (heightM * heightM);
+            return Math.round(bmi * 10) / 10;
+        }
+        
+        function getBMICategory(bmi) {
+            if (bmi < 18.5) return { category: 'Underweight', risk: 'Malnutrition risk', color: 'blue', status: 'warning' };
+            if (bmi < 25) return { category: 'Normal weight', risk: 'Low risk', color: 'green', status: 'normal' };
+            if (bmi < 30) return { category: 'Overweight (Pre-obese)', risk: 'Increased risk', color: 'amber', status: 'warning' };
+            if (bmi < 35) return { category: 'Obese Class I', risk: 'High risk', color: 'orange', status: 'critical' };
+            if (bmi < 40) return { category: 'Obese Class II', risk: 'Very high risk', color: 'red', status: 'critical' };
+            return { category: 'Obese Class III', risk: 'Extremely high risk', color: 'red', status: 'critical' };
+        }
+        
+        function updateBMIDisplay() {
+            const bmi = calculateBMI();
+            const info = getBMICategory(bmi);
+            
+            document.getElementById('bmiValue').textContent = bmi.toFixed(1);
+            document.getElementById('bmiCategory').textContent = info.category;
+            document.getElementById('bmiRisk').textContent = info.risk;
+            document.getElementById('badge-bmi').textContent = info.category.split(' ')[0];
+            document.getElementById('badge-bmi').className = `px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(info.status)}`;
+            
+            // Update indicator position
+            const indicator = document.getElementById('bmiIndicator');
+            let position = 0;
+            if (bmi < 18.5) position = (bmi / 18.5) * 20;
+            else if (bmi < 25) position = 20 + ((bmi - 18.5) / 6.5) * 35;
+            else if (bmi < 30) position = 55 + ((bmi - 25) / 5) * 25;
+            else if (bmi < 35) position = 80 + ((bmi - 30) / 5) * 10;
+            else position = 90 + Math.min((bmi - 35) / 10 * 10, 10);
+            indicator.style.width = `${Math.min(100, Math.max(0, position))}%`;
+            indicator.style.backgroundColor = chartColors[info.color];
+            
+            document.getElementById('time-bmi').textContent = 'Just now';
+        }
+        
+        // ============================================
+        // CHART MANAGEMENT
+        // ============================================
+        
+        function createChart(canvasId, key, color) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return null;
+            
+            const config = vitalConfig[key];
+            const data = history[key] || [];
+            const labels = data.map((_, i) => `Day ${i + 1}`);
+            
+            // Destroy existing chart
+            if (charts[canvasId]) {
+                charts[canvasId].destroy();
+            }
+            
+            charts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: config.label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: color + '20',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: color,
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#fff',
+                            bodyColor: '#e2e8f0',
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false,
+                            grid: { display: false }
+                        },
+                        y: {
+                            display: true,
+                            grid: { color: '#f1f5f9' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } },
+                            min: Math.min(...data) * 0.95,
+                            max: Math.max(...data) * 1.05
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    animation: {
+                        duration: 500,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            
+            return charts[canvasId];
+        }
+        
+        function updateChart(canvasId, key) {
+            const chart = charts[canvasId];
+            if (!chart) return;
+            
+            const data = history[key] || [];
+            chart.data.labels = data.map((_, i) => `Day ${i + 1}`);
+            chart.data.datasets[0].data = data;
+            chart.options.scales.y.min = Math.min(...data) * 0.95;
+            chart.options.scales.y.max = Math.max(...data) * 1.05;
+            chart.update('none');
+        }
+        
+        function initAllCharts() {
+            createChart('chart-rr', 'rr', chartColors.medical);
+            createChart('chart-hr', 'hr', chartColors.red);
+            createChart('chart-spo2', 'spo2', chartColors.blue);
+            createChart('chart-temp', 'temp', chartColors.orange);
+            createChart('chart-bp-sys', 'bpSys', chartColors.purple);
+            createChart('chart-bp-dia', 'bpDia', chartColors.purple);
+            createChart('chart-height', 'height', chartColors.green);
+            createChart('chart-weight', 'weight', chartColors.amber);
+            createChart('chart-head', 'head', chartColors.purple);
+        }
+        
+        // ============================================
+        // VITAL SIGNS UPDATE LOGIC
+        // ============================================
+        
+        function updateVital(key, value) {
+            const numValue = parseFloat(value);
+            if (isNaN(numValue)) return;
+            
+            // Store original value based on base units
+            let storeValue = numValue;
+            
+            // Convert to base units for storage
+            if (key === 'temp' && units.temp === 'f') {
+                storeValue = (numValue - 32) * 5/9;
+            } else if (key === 'height' && units.height === 'in') {
+                storeValue = numValue * 2.54;
+            } else if (key === 'weight' && units.weight === 'lbs') {
+                storeValue = numValue / 2.20462;
+            }
+            
+            vitals[key] = storeValue;
+            
+            // Add to history
+            if (history[key]) {
+                history[key].push(storeValue);
+                if (history[key].length > 7) history[key].shift();
+            }
+            
+            // Update all UI elements
+            updateVitalCard(key);
+            updateOverviewCard(key);
+            updateQuickEntryField(key);
+            updateAlerts();
+            updateSummaryStats();
+            updateOverallRisk();
+            
+            // Update charts
+            const chartIds = {
+                rr: 'chart-rr',
+                hr: 'chart-hr',
+                spo2: 'chart-spo2',
+                temp: 'chart-temp',
+                bpSys: 'chart-bp-sys',
+                bpDia: 'chart-bp-dia',
+                height: 'chart-height',
+                weight: 'chart-weight',
+                head: 'chart-head'
+            };
+            if (chartIds[key]) updateChart(chartIds[key], key);
+            
+            // Special handling for BMI when height or weight changes
+            if (key === 'height' || key === 'weight') {
+                updateBMIDisplay();
+                // Update BMI in overview
+                updateOverviewCard('bmi');
+            }
+        }
+        
+        function updateVitalCard(key) {
+            const config = vitalConfig[key];
+            const value = vitals[key];
+            const status = getStatus(key, value);
+            const trend = getTrend(key);
+            
+            // Update badge
+            const badge = document.getElementById(`badge-${key}`);
+            if (badge) {
+                badge.textContent = getStatusLabel(status);
+                badge.className = `px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(status)}`;
+            }
+            
+            // Update card border
+            const card = document.getElementById(`card-${key}`);
+            if (card) {
+                card.className = `bg-white rounded-xl border border-slate-200 p-6 vital-card ${status} fade-in`;
+            }
+            
+            // Update trend
+            const trendEl = document.getElementById(`trend-${key}`);
+            if (trendEl) {
+                trendEl.textContent = trend.label;
+                trendEl.className = `font-medium ${trend.class}`;
+            }
+            
+            // Update time
+            const timeEl = document.getElementById(`time-${key}`);
+            if (timeEl) {
+                timeEl.textContent = getCurrentTime();
+            }
+            
+            // Update input value (display in current unit)
+            const input = document.getElementById(`input-${key}`);
+            if (input && key !== 'bpSys' && key !== 'bpDia') {
+                let displayValue = value;
+                if (key === 'temp' && units.temp === 'f') {
+                    displayValue = (value * 9/5 + 32).toFixed(1);
+                } else if (key === 'height' && units.height === 'in') {
+                    displayValue = (value / 2.54).toFixed(1);
+                } else if (key === 'weight' && units.weight === 'lbs') {
+                    displayValue = (value * 2.20462).toFixed(1);
+                } else {
+                    displayValue = formatValue(key, value);
+                }
+                input.value = displayValue;
+            }
+            
+            // Special handling for BP
+            if (key === 'bpSys') {
+                const input = document.getElementById('input-bp-sys');
+                if (input) input.value = formatValue(key, value);
+                const badge = document.getElementById('badge-bp');
+                if (badge) {
+                    const diaStatus = getStatus('bpDia', vitals.bpDia);
+                    const worstStatus = [status, diaStatus].includes('critical') ? 'critical' : 
+                                       [status, diaStatus].includes('warning') ? 'warning' : 'normal';
+                    badge.textContent = getStatusLabel(worstStatus);
+                    badge.className = `px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(worstStatus)}`;
+                }
+                const card = document.getElementById('card-bp');
+                if (card) {
+                    const diaStatus = getStatus('bpDia', vitals.bpDia);
+                    const worstStatus = [status, diaStatus].includes('critical') ? 'critical' : 
+                                       [status, diaStatus].includes('warning') ? 'warning' : 'normal';
+                    card.className = `bg-white rounded-xl border border-slate-200 p-6 vital-card ${worstStatus} lg:col-span-2 fade-in`;
+                }
+            }
+            if (key === 'bpDia') {
+                const input = document.getElementById('input-bp-dia');
+                if (input) input.value = formatValue(key, value);
+                // Update BP card via bpSys logic
+                updateVitalCard('bpSys');
+            }
+        }
+        
+        // ============================================
+        // OVERVIEW PANEL (TAB 1)
+        // ============================================
+        
+        function renderOverviewCards() {
+            const grid = document.getElementById('vitalSignsGrid');
+            const overviewKeys = ['rr', 'hr', 'spo2', 'temp', 'bpSys', 'bpDia', 'height', 'weight', 'head', 'bmi'];
+            
+            grid.innerHTML = overviewKeys.map(key => {
+                if (key === 'bmi') {
+                    const bmi = calculateBMI();
+                    const info = getBMICategory(bmi);
+                    const status = info.status;
+                    const trend = { label: '→ Stable', class: 'trend-stable' }; // BMI trend would need history
+                    
+                    return `
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 vital-card ${status} fade-in">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h4 class="font-medium text-slate-900 flex items-center gap-1">
+                                        <i data-lucide="calculator" class="w-4 h-4 text-medical-600"></i>
+                                        BMI
+                                    </h4>
+                                    <p class="text-xs text-slate-500">Body Mass Index</p>
+                                </div>
+                                <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(status)}">${getStatusLabel(status)}</span>
+                            </div>
+                            <div class="text-center mb-3">
+                                <p class="text-3xl font-bold text-slate-900">${bmi.toFixed(1)}</p>
+                                <p class="text-xs text-slate-500">kg/m² — ${info.category}</p>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-slate-500">
+                                <span>Trend: <span class="font-medium ${trend.class}">${trend.label}</span></span>
+                                <span>Updated: <span class="font-medium">${getCurrentTime()}</span></span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                const config = vitalConfig[key];
+                const value = vitals[key];
+                const status = getStatus(key, value);
+                const trend = getTrend(key);
+                let displayValue = formatValue(key, value);
+                let displayUnit = config.unit;
+                
+                // Adjust display for current units
+                if (key === 'temp' && units.temp === 'f') {
+                    displayValue = (value * 9/5 + 32).toFixed(1);
+                    displayUnit = '°F';
+                } else if (key === 'height' && units.height === 'in') {
+                    displayValue = (value / 2.54).toFixed(1);
+                    displayUnit = 'in';
+                } else if (key === 'weight' && units.weight === 'lbs') {
+                    displayValue = (value * 2.20462).toFixed(1);
+                    displayUnit = 'lbs';
+                }
+                
+                return `
+                    <div class="bg-white rounded-xl border border-slate-200 p-5 vital-card ${status} fade-in">
+                        <div class="flex items-start justify-between mb-3">
+                            <div>
+                                <h4 class="font-medium text-slate-900 flex items-center gap-1">
+                                    <i data-lucide="${config.icon}" class="w-4 h-4 text-${config.color}-600"></i>
+                                    ${config.label}
+                                </h4>
+                                <p class="text-xs text-slate-500">${config.label === 'BP Systolic' ? 'Systolic Pressure' : config.label === 'BP Diastolic' ? 'Diastolic Pressure' : ''}</p>
+                            </div>
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(status)}">${getStatusLabel(status)}</span>
+                        </div>
+                        <div class="text-center mb-3">
+                            <p class="text-3xl font-bold text-slate-900">${displayValue}</p>
+                            <p class="text-xs text-slate-500">${displayUnit} (Ref: ${getRefRange(key)})</p>
+                        </div>
+                        <div class="flex items-center justify-between text-xs text-slate-500">
+                            <span>Trend: <span class="font-medium ${trend.class}">${trend.label}</span></span>
+                            <span>Updated: <span class="font-medium">${getCurrentTime()}</span></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+        
+        function getRefRange(key) {
+            const config = vitalConfig[key];
+            if (!config) return '';
+            if (key === 'temp' && units.temp === 'f') return '97–99°F';
+            if (key === 'height' && units.height === 'in') return '55–79 in';
+            if (key === 'weight' && units.weight === 'lbs') return '110–220 lbs';
+            return `${config.normal.min}–${config.normal.max} ${config.unit}`;
+        }
+        
+        function updateOverviewCard(key) {
+            // Re-render the specific card or all cards
+            renderOverviewCards();
+        }
+        
+        function updateSummaryStats() {
+            let normal = 0, warning = 0, critical = 0;
+            
+            Object.keys(vitals).forEach(key => {
+                if (key === 'bpSys' || key === 'bpDia') return; // Count BP as one
+                const status = getStatus(key, vitals[key]);
+                if (status === 'normal') normal++;
+                else if (status === 'warning') warning++;
+                else critical++;
+            });
+            
+            // Count BP as one vital
+            const bpStatus = [getStatus('bpSys', vitals.bpSys), getStatus('bpDia', vitals.bpDia)].includes('critical') ? 'critical' :
+                            [getStatus('bpSys', vitals.bpSys), getStatus('bpDia', vitals.bpDia)].includes('warning') ? 'warning' : 'normal';
+            if (bpStatus === 'normal') normal++;
+            else if (bpStatus === 'warning') warning++;
+            else critical++;
+            
+            // Add BMI
+            const bmi = calculateBMI();
+            const bmiInfo = getBMICategory(bmi);
+            if (bmiInfo.status === 'normal') normal++;
+            else if (bmiInfo.status === 'warning') warning++;
+            else critical++;
+            
+            document.getElementById('statNormal').textContent = normal;
+            document.getElementById('statWarning').textContent = warning;
+            document.getElementById('statCritical').textContent = critical;
+            document.getElementById('statLastUpdated').textContent = 'Just now';
+        }
+        
+        function updateOverallRisk() {
+            let hasCritical = false, hasWarning = false;
+            
+            Object.keys(vitals).forEach(key => {
+                if (key === 'bpSys' || key === 'bpDia') return;
+                const status = getStatus(key, vitals[key]);
+                if (status === 'critical') hasCritical = true;
+                else if (status === 'warning') hasWarning = true;
+            });
+            
+            const bpStatus = [getStatus('bpSys', vitals.bpSys), getStatus('bpDia', vitals.bpDia)].includes('critical') ? 'critical' :
+                            [getStatus('bpSys', vitals.bpSys), getStatus('bpDia', vitals.bpDia)].includes('warning') ? 'warning' : 'normal';
+            if (bpStatus === 'critical') hasCritical = true;
+            else if (bpStatus === 'warning') hasWarning = true;
+            
+            const bmi = calculateBMI();
+            const bmiInfo = getBMICategory(bmi);
+            if (bmiInfo.status === 'critical') hasCritical = true;
+            else if (bmiInfo.status === 'warning') hasWarning = true;
+            
+            let overallStatus, overallLabel;
+            if (hasCritical) {
+                overallStatus = 'critical';
+                overallLabel = 'Critical';
+            } else if (hasWarning) {
+                overallStatus = 'warning';
+                overallLabel = 'Warning';
+            } else {
+                overallStatus = 'normal';
+                overallLabel = 'Normal';
+            }
+            
+            const badges = ['navOverallRisk', 'navOverallRiskMobile'];
+            badges.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.textContent = overallLabel;
+                    el.className = `px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(overallStatus)}`;
+                }
+            });
+        }
+        
+        // ============================================
+        // QUICK ENTRY FORM (TAB 4)
+        // ============================================
+        
+        function renderQuickEntryForm() {
+            const container = document.getElementById('quickEntryForm');
+            const quickEntryKeys = [
+                { key: 'rr', label: 'Respiratory Rate', unit: 'br/min', icon: 'activity', color: 'medical', min: 0, max: 60, step: 1 },
+                { key: 'hr', label: 'Heart Rate', unit: 'bpm', icon: 'heart', color: 'red', min: 30, max: 200, step: 1 },
+                { key: 'spo2', label: 'SpO₂', unit: '%', icon: 'droplet', color: 'blue', min: 70, max: 100, step: 1 },
+                { key: 'temp', label: 'Temperature', unit: units.temp === 'c' ? '°C' : '°F', icon: 'thermometer', color: 'orange', min: units.temp === 'c' ? 30 : 86, max: units.temp === 'c' ? 42 : 108, step: 0.1 },
+                { key: 'bpSys', label: 'BP Systolic', unit: 'mmHg', icon: 'gauge', color: 'purple', min: 60, max: 250, step: 1 },
+                { key: 'bpDia', label: 'BP Diastolic', unit: 'mmHg', icon: 'gauge', color: 'purple', min: 30, max: 150, step: 1 },
+                { key: 'height', label: 'Height', unit: units.height, icon: 'ruler', color: 'green', min: units.height === 'cm' ? 50 : 20, max: units.height === 'cm' ? 250 : 98, step: 0.1 },
+                { key: 'weight', label: 'Weight', unit: units.weight, icon: 'weight', color: 'amber', min: units.weight === 'kg' ? 20 : 44, max: units.weight === 'kg' ? 300 : 660, step: 0.1 },
+                { key: 'head', label: 'Head Circumference', unit: 'cm', icon: 'circle-dot', color: 'purple', min: 30, max: 70, step: 0.1 }
+            ];
+            
+            container.innerHTML = quickEntryKeys.map(item => {
+                const config = vitalConfig[item.key];
+                let value = vitals[item.key];
+                
+                // Convert to display units
+                if (item.key === 'temp' && units.temp === 'f') {
+                    value = (value * 9/5 + 32).toFixed(1);
+                } else if (item.key === 'height' && units.height === 'in') {
+                    value = (value / 2.54).toFixed(1);
+                } else if (item.key === 'weight' && units.weight === 'lbs') {
+                    value = (value * 2.20462).toFixed(1);
+                } else {
+                    value = formatValue(item.key, value);
+                }
+                
+                const status = getStatus(item.key, vitals[item.key]);
+                
+                return `
+                    <div class="bg-${status === 'critical' ? 'red' : status === 'warning' ? 'amber' : 'green'}-50 border border-${status === 'critical' ? 'red' : status === 'warning' ? 'amber' : 'green'}-200 rounded-lg p-4">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i data-lucide="${item.icon}" class="w-4 h-4 text-${item.color}-600"></i>
+                            <label class="font-medium text-slate-900 text-sm">${item.label}</label>
+                            <span class="px-1.5 py-0.5 rounded text-xs font-medium ${getStatusClass(status)} ml-auto">${getStatusLabel(status)}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="quick-${item.key}" value="${value}" min="${item.min}" max="${item.max}" step="${item.step}"
+                                class="input-field flex-1 px-3 py-2 border border-slate-300 rounded-lg text-center font-medium"
+                                onchange="updateQuickValue('${item.key}', this.value)">
+                            <span class="text-sm text-slate-500 whitespace-nowrap">${item.unit}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Ref: ${getRefRange(item.key)}</p>
+                    </div>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+        
+        function updateQuickValue(key, value) {
+            const numValue = parseFloat(value);
+            if (isNaN(numValue)) return;
+            
+            // Convert to base units
+            let storeValue = numValue;
+            if (key === 'temp' && units.temp === 'f') {
+                storeValue = (numValue - 32) * 5/9;
+            } else if (key === 'height' && units.height === 'in') {
+                storeValue = numValue * 2.54;
+            } else if (key === 'weight' && units.weight === 'lbs') {
+                storeValue = numValue / 2.20462;
+            }
+            
+            vitals[key] = storeValue;
+            
+            // Add to history
+            if (history[key]) {
+                history[key].push(storeValue);
+                if (history[key].length > 7) history[key].shift();
+            }
+            
+            // Update the quick entry field's status badge
+            const field = document.getElementById(`quick-${key}`).closest('div');
+            const status = getStatus(key, storeValue);
+            field.className = `bg-${status === 'critical' ? 'red' : status === 'warning' ? 'amber' : 'green'}-50 border border-${status === 'critical' ? 'red' : status === 'warning' ? 'amber' : 'green'}-200 rounded-lg p-4`;
+            field.querySelector('span[class*="rounded"]').textContent = getStatusLabel(status);
+            field.querySelector('span[class*="rounded"]').className = `px-1.5 py-0.5 rounded text-xs font-medium ${getStatusClass(status)} ml-auto`;
+            
+            // Update all other UI
+            updateVitalCard(key);
+            updateOverviewCard(key);
+            updateAlerts();
+            updateSummaryStats();
+            updateOverallRisk();
+            
+            const chartIds = {
+                rr: 'chart-rr', hr: 'chart-hr', spo2: 'chart-spo2', temp: 'chart-temp',
+                bpSys: 'chart-bp-sys', bpDia: 'chart-bp-dia',
+                height: 'chart-height', weight: 'chart-weight', head: 'chart-head'
+            };
+            if (chartIds[key]) updateChart(chartIds[key], key);
+            
+            if (key === 'height' || key === 'weight') {
+                updateBMIDisplay();
+                updateOverviewCard('bmi');
+                // Update BMI field in quick entry
+                const bmi = calculateBMI();
+                const info = getBMICategory(bmi);
+                // BMI is not editable in quick entry, just display
+            }
+        }
+        
+        function clearQuickForm() {
+            renderQuickEntryForm();
+            showToast('Form reset to current values');
+        }
+        
+        function saveQuickEntry() {
+            showToast('All vitals saved successfully! Dashboard updated.');
+            // In a real app, this would send to backend
+        }
+        
+        function updateQuickEntryField(key) {
+            const input = document.getElementById(`quick-${key}`);
+            if (input) {
+                let value = vitals[key];
+                if (key === 'temp' && units.temp === 'f') {
+                    value = (value * 9/5 + 32).toFixed(1);
+                } else if (key === 'height' && units.height === 'in') {
+                    value = (value / 2.54).toFixed(1);
+                } else if (key === 'weight' && units.weight === 'lbs') {
+                    value = (value * 2.20462).toFixed(1);
+                } else {
+                    value = formatValue(key, value);
+                }
+                input.value = value;
+                
+                // Update status badge
+                const field = input.closest('div');
+                const status = getStatus(key, vitals[key]);
+                field.className = `bg-${status === 'critical' ? 'red' : status === 'warning' ? 'amber' : 'green'}-50 border border-${status === 'critical' ? 'red' : status === 'warning' ? 'amber' : 'green'}-200 rounded-lg p-4`;
+                field.querySelector('span[class*="rounded"]').textContent = getStatusLabel(status);
+                field.querySelector('span[class*="rounded"]').className = `px-1.5 py-0.5 rounded text-xs font-medium ${getStatusClass(status)} ml-auto`;
+            }
+        }
+        
+        // ============================================
+        // ALERTS PANEL (TAB 4)
+        // ============================================
+        
+        function updateAlerts() {
+            const alertsList = document.getElementById('alertsList');
+            const alertCount = document.getElementById('alertCount');
+            const alerts = [];
+            
+            // Check each vital
+            Object.keys(vitals).forEach(key => {
+                if (key === 'bpSys' || key === 'bpDia') return;
+                const status = getStatus(key, vitals[key]);
+                if (status !== 'normal') {
+                    alerts.push({
+                        key,
+                        label: vitalConfig[key].label,
+                        value: vitals[key],
+                        unit: vitalConfig[key].unit,
+                        status,
+                        refRange: getRefRange(key)
+                    });
+                }
+            });
+            
+            // Check BP
+            const bpSysStatus = getStatus('bpSys', vitals.bpSys);
+            const bpDiaStatus = getStatus('bpDia', vitals.bpDia);
+            if (bpSysStatus !== 'normal' || bpDiaStatus !== 'normal') {
+                const worstStatus = bpSysStatus === 'critical' || bpDiaStatus === 'critical' ? 'critical' : 'warning';
+                alerts.push({
+                    key: 'bp',
+                    label: 'Blood Pressure',
+                    value: `${vitals.bpSys}/${vitals.bpDia}`,
+                    unit: 'mmHg',
+                    status: worstStatus,
+                    refRange: '<120/<80 mmHg'
+                });
+            }
+            
+            // Check BMI
+            const bmi = calculateBMI();
+            const bmiInfo = getBMICategory(bmi);
+            if (bmiInfo.status !== 'normal') {
+                alerts.push({
+                    key: 'bmi',
+                    label: 'Body Mass Index',
+                    value: bmi.toFixed(1),
+                    unit: 'kg/m²',
+                    status: bmiInfo.status,
+                    refRange: '18.5–24.9 kg/m²'
+                });
+            }
+            
+            alertCount.textContent = `${alerts.length} Alert${alerts.length !== 1 ? 's' : ''}`;
+            alertCount.className = `px-2 py-1 rounded-full text-xs font-medium ${alerts.some(a => a.status === 'critical') ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`;
+            
+            if (alerts.length === 0) {
+                alertsList.innerHTML = `
+                    <div class="text-center py-8 text-slate-500">
+                        <i data-lucide="check-circle" class="w-12 h-12 text-green-400 mx-auto mb-2"></i>
+                        <p class="font-medium">No Active Alerts</p>
+                        <p class="text-sm">All parameters within normal ranges</p>
+                    </div>
+                `;
+            } else {
+                // Sort: critical first, then warning
+                alerts.sort((a, b) => {
+                    const order = { critical: 0, warning: 1, normal: 2 };
+                    return order[a.status] - order[b.status];
+                });
+                
+                alertsList.innerHTML = alerts.map(alert => `
+                    <div class="p-4 rounded-lg border-l-4 ${alert.status === 'critical' ? 'bg-red-50 border-red-500' : 'bg-amber-50 border-amber-500'} pulse-alert">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-medium text-slate-900">${alert.label}</h4>
+                                    <span class="px-2 py-0.5 rounded text-xs font-medium ${getStatusClass(alert.status)}">${getStatusLabel(alert.status)}</span>
+                                </div>
+                                <p class="text-sm text-slate-600">Current: <span class="font-semibold">${alert.value} ${alert.unit}</span></p>
+                                <p class="text-xs text-slate-500">Reference: ${alert.refRange}</p>
+                            </div>
+                            <i data-lucide="${alert.status === 'critical' ? 'alert-triangle' : 'alert-circle'}" class="w-5 h-5 ${alert.status === 'critical' ? 'text-red-500' : 'text-amber-500'} mt-1 flex-shrink-0"></i>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            lucide.createIcons();
+        }
+        
+        function renderThresholdsList() {
+            const container = document.getElementById('thresholdsList');
+            const thresholds = [
+                { name: 'Respiratory Rate', normal: '12–20', warning: '8–11 / 21–25', critical: '<8 or >25', unit: 'br/min' },
+                { name: 'Heart Rate', normal: '60–100', warning: '50–59 / 101–110', critical: '<50 or >110', unit: 'bpm' },
+                { name: 'SpO₂', normal: '95–100%', warning: '90–94%', critical: '<90%', unit: '%' },
+                { name: 'Temperature', normal: '36.1–37.2°C', warning: '35.5–36.0 / 37.3–38.0°C', critical: '<35.5 or >38.0°C', unit: '°C' },
+                { name: 'BP Systolic', normal: '<120', warning: '120–139', critical: '≥140', unit: 'mmHg' },
+                { name: 'BP Diastolic', normal: '<80', warning: '80–89', critical: '≥90', unit: 'mmHg' },
+                { name: 'BMI', normal: '18.5–24.9', warning: '25–29.9', critical: '≥30', unit: 'kg/m²' }
+            ];
+            
+            container.innerHTML = thresholds.map(t => `
+                <div class="flex items-center justify-between text-xs py-1">
+                    <span class="text-slate-600">${t.name}</span>
+                    <div class="flex items-center gap-2 text-right">
+                        <span class="px-1.5 py-0.5 rounded bg-green-100 text-green-700">${t.normal}</span>
+                        <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">${t.warning}</span>
+                        <span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700">${t.critical}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // ============================================
+        // TAB NAVIGATION
+        // ============================================
+        
+        function showTab(tabId) {
+            // Hide all panels
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.add('hidden');
+                panel.classList.remove('fade-in');
+            });
+            
+            // Deactivate all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected panel
+            const panel = document.getElementById(`panel-${tabId}`);
+            if (panel) {
+                panel.classList.remove('hidden');
+                // Force reflow for animation
+                void panel.offsetWidth;
+                panel.classList.add('fade-in');
+            }
+            
+            // Activate selected tab
+            const tabBtn = document.getElementById(`tab-${tabId}`);
+            if (tabBtn) tabBtn.classList.add('active');
+            
+            // Special initialization for tabs
+            if (tabId === 'overview') {
+                renderOverviewCards();
+            } else if (tabId === 'quick-entry') {
+                renderQuickEntryForm();
+                renderThresholdsList();
+            } else if (tabId === 'anthropometrics') {
+                updateBMIDisplay();
+            }
+            
+            // Update URL hash
+            window.location.hash = tabId;
+        }
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        function init() {
+            // Set patient info in nav
+            document.getElementById('navPatientName').textContent = patient.name;
+            document.getElementById('navPatientAge').textContent = patient.age;
+            document.getElementById('navDischargeDate').textContent = patient.dischargeDate;
+            document.getElementById('navPatientNameMobile').textContent = patient.name;
+            
+            // Initialize all vital cards
+            Object.keys(vitals).forEach(key => {
+                if (key !== 'bpSys' && key !== 'bpDia') {
+                    updateVitalCard(key);
+                }
+            });
+            updateVitalCard('bpSys');
+            
+            // Initialize charts
+            initAllCharts();
+            
+            // Initialize overview
+            renderOverviewCards();
+            
+            // Initialize BMI
+            updateBMIDisplay();
+            
+            // Initialize alerts
+            updateAlerts();
+            renderThresholdsList();
+            
+            // Initialize summary stats
+            updateSummaryStats();
+            updateOverallRisk();
+            
+            // Initialize quick entry form
+            renderQuickEntryForm();
+            
+            // Initialize lucide icons
+            lucide.createIcons();
+            
+            // Check URL hash for deep linking
+            const hash = window.location.hash.slice(1);
+            if (hash && ['overview', 'cardiopulmonary', 'anthropometrics', 'quick-entry'].includes(hash)) {
+                showTab(hash);
+            }
+        }
+        
+        // Handle hash changes
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash.slice(1);
+            if (hash && ['overview', 'cardiopulmonary', 'anthropometrics', 'quick-entry'].includes(hash)) {
+                showTab(hash);
+            }
+        });
+        
+        // Start the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

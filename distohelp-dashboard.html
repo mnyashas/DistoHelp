@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DistoHelp — Post-Discharge Deterioration Monitor</title>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --teal-50:#f0fdfa;--teal-100:#ccfbf1;--teal-500:#14b8a6;--teal-600:#0d9488;--teal-700:#0f766e;
+            --slate-50:#f8fafc;--slate-100:#f1f5f9;--slate-200:#e2e8f0;--slate-300:#cbd5e1;
+            --slate-400:#94a3b8;--slate-500:#64748b;--slate-600:#475569;--slate-700:#334155;--slate-800:#1e293b;--slate-900:#0f172a;
+            --green-50:#f0fdf4;--green-100:#dcfce7;--green-500:#22c55e;--green-600:#16a34a;--green-800:#166534;
+            --amber-50:#fffbeb;--amber-100:#fef3c7;--amber-500:#f59e0b;--amber-600:#d97706;--amber-800:#92400e;
+            --red-50:#fef2f2;--red-100:#fee2e2;--red-500:#ef4444;--red-600:#dc2626;--red-800:#991b1b;
+            --blue-50:#eff6ff;--blue-100:#dbeafe;--blue-500:#3b82f6;--blue-600:#2563eb;
+            --violet-50:#f5f3ff;--violet-100:#ede9fe;--violet-500:#8b5cf6;--violet-600:#7c3aed;
+            --pink-50:#fdf2f8;--pink-100:#fce7f3;--pink-500:#ec4899;--pink-600:#db2777;
+            --emerald-50:#ecfdf5;--emerald-100:#d1fae5;--emerald-500:#10b981;--emerald-600:#059669;
+            --shadow-sm:0 1px 2px 0 rgb(0 0 0 / .05);--shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1);
+            --shadow-md:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1);
+            --shadow-lg:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1);
+            --radius-lg:.5rem;--radius-xl:.75rem;--radius-2xl:1rem;
+        }
+        html{font-size:16px;-webkit-font-smoothing:antialiased}
+        body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.5;min-height:100vh}
+        a{color:inherit}
+        button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none}
+        input{font-family:inherit;font-size:inherit;border:1px solid #e2e8f0;border-radius:.5rem;padding:.5rem .75rem;transition:all .15s}
+        input:focus{outline:none;border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.15)}
+        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+        
+        /* ===== UTILITIES ===== */
+        .flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}
+        .items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}
+        .gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}
+        .p-1{padding:.25rem}.p-2{padding:.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.p-8{padding:2rem}
+        .px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}
+        .px-6{padding-left:1.5rem;padding-right:1.5rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}
+        .py-3{padding-top:.75rem;padding-bottom:.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}
+        .mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}
+        .mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}
+        .ml-2{margin-left:.5rem}.mr-2{margin-right:.5rem}
+        .w-full{width:100%}.w-24{width:6rem}.w-10{width:2.5rem}.w-12{width:3rem}.w-16{width:4rem}.w-20{width:5rem}.h-10{height:2.5rem}.h-12{height:3rem}.h-16{height:4rem}
+        .rounded{border-radius:.25rem}.rounded-lg{Border-radius:.5rem}.rounded-xl{Border-radius:.75rem}.rounded-2xl{Border-radius:1rem}.rounded-full{Border-radius:9999px}
+        .border{border:1px solid #e2e8f0}.border-b{border-bottom:1px solid #e2e8f0}.border-l-4{border-left-width:4px}
+        .bg-white{background:#fff}.bg-slate-50{background:#f8fafc}.bg-slate-100{background:#f1f5f9}.bg-teal-50{background:#f0fdfa}.bg-teal-100{background:#ccfbf1}
+        .bg-teal-600{background:#0d9488}.bg-teal-700{background:#0f766e}.bg-green-50{background:#f0fdf4}.bg-green-100{background:#dcfce7}
+        .bg-amber-50{background:#fffbeb}.bg-amber-100{background:#fef3c7}.bg-red-50{background:#fef2f2}.bg-red-100{background:#fee2e2}
+        .bg-blue-100{background:#dbeafe}.bg-violet-100{background:#ede9fe}.bg-pink-100{background:#fce7f3}.bg-emerald-100{background:#d1fae5}
+        .bg-white\/20{background:rgba(255,255,255,.2)}
+        .text-white{color:#fff}.text-slate-50{color:#f8fafc}.text-teal-100{color:#ccfbf1}.text-teal-200{color:#99f6e4}
+        .text-slate-400{color:#94a3b8}.text-slate-500{color:#64748b}.text-slate-600{color:#475569}.text-slate-700{color:#334155}
+        .text-slate-800{color:#1e293b}.text-slate-900{color:#0f172a}.text-teal-600{color:#0d9488}.text-teal-700{color:#0f766e}
+        .text-green-500{color:#22c55e}.text-green-600{color:#16a34a}.text-green-800{color:#166534}
+        .text-amber-500{color:#f59e0b}.text-amber-600{color:#d97706}.text-amber-800{color:#92400e}
+        .text-red-500{color:#ef4444}.text-red-600{color:#dc2626}.text-red-800{color:#991b1b}
+        .text-blue-500{color:#3b82f6}.text-blue-600{color:#2563eb}
+        .text-violet-500{color:#8b5cf6}.text-violet-600{color:#7c3aed}
+        .text-pink-500{color:#ec4899}.text-pink-600{color:#db2777}
+        .font-medium{font-weight:500}.font-semibold{font-weight:600}.font-bold{font-weight:700}
+        .text-xs{font-size:.75rem;line-height:1rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-base{font-size:1rem;line-height:1.5rem}
+        .text-lg{font-size:1.125rem;line-height:1.75rem}.text-xl{font-size:1.25rem;line-height:1.75rem}
+        .text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-5xl{font-size:3rem;line-height:1}
+        .tracking-wider{letter-spacing:.05em}.tracking-widest{letter-spacing:.1em}
+        .shadow-sm{box-shadow:var(--shadow-sm)}.shadow{box-shadow:var(--shadow)}.shadow-md{box-shadow:var(--shadow-md)}.shadow-lg{box-shadow:var(--shadow-lg)}
+        .sticky{position:sticky}.top-0{top:0}.z-50{z-index:50}.z-40{z-index:40}.relative{position:relative}.absolute{position:absolute}.right-0{right:0}.right-4{right:1rem}.top-4{top:1rem}
+        .overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.max-h-96{max-height:24rem}
+        .whitespace-nowrap{white-space:nowrap}.cursor-pointer{cursor:pointer}.cursor-not-allowed{cursor:not-allowed}.select-none{user-select:none}
+        .transition{transition:all .15s ease}.transition-colors{transition:color .15s,background .15s,border .15s}.transition-shadow{transition:box-shadow .15s}
+        .hover\:bg-slate-50:hover{background:#f8fafc}.hover\:bg-slate-100:hover{background:#f1f5f9}.hover\:bg-teal-700:hover{background:#0f766e}
+        .hover\:bg-teal-50:hover{background:#f0fdfa}.hover\:bg-red-50:hover{background:#fef2f2}.hover\:bg-amber-50:hover{background:#fffbeb}
+        .hover\:text-slate-900:hover{color:#0f172a}.hover\:text-teal-700:hover{color:#0f766e}.hover\:text-teal-600:hover{color:#0d9488}
+        .hover\:text-slate-700:hover{color:#334155}.hover\:border-teal-300:hover{border-color:#5eead4}.hover\:shadow-md:hover{box-shadow:var(--shadow-md)}
+        .disabled\:opacity-50:disabled{opacity:.5}.disabled\:cursor-not-allowed:disabled{cursor:not-allowed}
+        .focus\:outline-none:focus{outline:none}.focus\:ring-2:focus{box-shadow:0 0 0 2px}.focus\:ring-teal-500:focus{box-shadow:0 0 0 2px #0d9488}.focus\:border-transparent:focus{border-color:transparent}
+        
+        /* ===== GRID ===== */
+        .grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}
+        @media(min-width:640px){.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        @media(min-width:1024px){.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:col-span-2{grid-column:span 2 / span 2}.lg\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}}
+        @media(min-width:768px){.md\:flex{display:flex}.md\:hidden{display:none}}
+        @media(max-width:1023px){.hidden\:md{display:none}}
+        
+        /* ===== CUSTOM COMPONENTS ===== */
+        .tab-btn{padding:.625rem 1rem;border-radius:.5rem;font-size:.875rem;font-weight:500;transition:all .15s;white-space:nowrap}
+        .tab-active{border-bottom:3px solid #0d9488;color:#0d9488;background:#f0fdfa}
+        .tab-inactive{color:#64748b;border-bottom:3px solid transparent}
+        .tab-inactive:hover{color:#0d9488;border-bottom-color:#0d9488}
+        .status-normal{border-left-color:#22c55e}.status-warning{border-left-color:#f59e0b}.status-critical{border-left-color:#ef4444}
+        .badge-normal{background:#dcfce7;color:#166534}.badge-warning{background:#fef3c7;color:#92400e}.badge-critical{background:#fee2e2;color:#991b1b}
+        .chart-container{position:relative;height:200px;width:100%}
+        .animate-fade-in{animation:fadeIn .3s ease-out forwards}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .animate-slide-up{animation:slideUp .4s ease-out forwards}
+        @keyframes spin{to{transform:rotate(360deg)}}.animate-spin{animation:spin 1s linear infinite}
+        
+        /* ===== LOGIN PAGE ===== */
+        .login-bg{background:linear-gradient(135deg,#f8fafc 0%,#fff 50%,#f0fdfa 100%)}
+        .input-field{width:100%;padding:.75rem 1rem;border:1px solid #e2e8f0;border-radius:.5rem;font-size:1.125rem;letter-spacing:.05em;transition:all .15s}
+        .input-field:focus{outline:none;border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.15)}
+        .btn-primary{width:100%;padding:.75rem 1rem;background:#0d9488;color:#fff;border-radius:.5rem;font-weight:500;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+        .btn-primary:hover:not(:disabled){background:#0f766e}.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+        .btn-secondary{padding:.5rem 1rem;border-radius:.375rem;font-size:.875rem;font-weight:500;transition:all .15s}
+        .btn-ghost{color:#64748b}.btn-ghost:hover{color:#334155}
+        
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+        
+        /* ===== ICON SIZES ===== */
+        .icon-sm{width:1rem;height:1rem}.icon-md{width:1.25rem;height:1.25rem}.icon-lg{width:1.5rem;height:1.5rem}.icon-xl{width:2rem;height:2rem}.icon-2xl{width:2.5rem;height:2.5rem}
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <div id="app"></div>
+
+    <script>
+        // ===== SVG ICONS (Lucide subset) =====
+        const Icons = {
+            'heart-pulse': '<path d="M21 12.79A9 9 0 1 1 9.21 3 7 7 0 0 0 12 21v-9"/><path d="M23 15V9l-4 4-4-4 4-4v6"/><circle cx="12" cy="12" r="3"/>',
+            'layout-grid': '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+            'heart-pulse': '<path d="M21 12.79A9 9 0 1 1 9.21 3 7 7 0 0 0 12 21v-9"/><path d="M23 15V9l-4 4-4-4 4-4v6"/><circle cx="12" cy="12" r="3"/>',
+            'ruler': '<path d="M15.5 5H20"/><path d="M15 11h5.5"/><path d="M15 17h5.5"/><path d="M3 5v14"/><path d="M21 5v14"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="3" x2="21" y1="15" y2="15"/><line x1="3" x2="21" y1="21" y2="21"/>',
+            'clipboard-list': '<rect x="9" y="3" width="6" height="18" rx="1"/><path d="M3 21h18"/><path d="M9 3v18"/><path d="M12 12h6"/><path d="M12 16h6"/><path d="M12 8h6"/>',
+            'wind': '<path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>',
+            'droplet': '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>',
+            'thermometer': '<path d="M14 4v11"/><path d="M8.5 4v11"/><path d="M6 15h12"/><path d="M9 18h6"/>',
+            'gauge': '<path d="M12 12v-6"/><path d="M12 6v-.5"/><circle cx="12" cy="12" r="10"/>',
+            'activity': '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+            'scale': '<path d="M19 3H5"/><path d="M19 21H5"/><path d="M5 3v18"/><path d="M19 3v18"/><path d="M12 3v6"/><path d="M12 15v6"/>',
+            'circle': '<circle cx="12" cy="12" r="10"/>',
+            'calculator': '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M7 12h10"/><path d="M12 17h.01"/><path d="M12 12h.01"/><path d="M12 7h.01"/><path d="M17 7h.01"/><path d="M17 12h.01"/><path d="M17 17h.01"/><path d="M7 17h.01"/><path d="M7 7h.01"/>',
+            'chart-line': '<path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4 4 4"/>',
+            'id-card': '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 17h12"/><path d="M6 13h18"/><circle cx="16" cy="9" r="2"/>',
+            'smartphone': '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>',
+            'send': '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
+            'lock-open': '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+            'alert-circle': '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+            'alert-triangle': '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+            'check-circle-2': '<circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/>',
+            'chevron-down': '<polyline points="6 9 12 15 18 9"/>',
+            'arrow-left': '<path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>',
+            'users': '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+            'user': '<circle cx="12" cy="8" r="4"/><path d="M20 21c0-3.07-1.64-5.64-4.5-6.32V4a2 2 0 0 0-4 0v10.68c-2.86.68-4.5 3.25-4.5 6.32"/>',
+            'info': '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+            'phone': '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+            'message-square': '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+            'calendar': '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+            'download': '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+            'zap': '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+            'save': '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
+            'clipboard-pen': '<rect x="9" y="3" width="6" height="18" rx="1"/><path d="M3 21h18"/><path d="M9 3v18"/><path d="M15.5 3H19"/><path d="M19 7.5V11"/><path d="M22 4l-3 3"/>',
+            'shield-check': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+            'log-out': '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+        };
+
+        // ===== HELPER FUNCTIONS =====
+        const h = (tag, props = {}, ...children) => {
+            const el = document.createElement(tag);
+            if (props) {
+                Object.entries(props).forEach(([k, v]) => {
+                    if (k === 'className') el.className = v;
+                    else if (k === 'onClick') el.addEventListener('click', v);
+                    else if (k === 'onChange') el.addEventListener('change', v);
+                    else if (k === 'onSubmit') el.addEventListener('submit', v);
+                    else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
+                    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+                    else if (k === 'htmlFor') el.htmlFor = v;
+                    else if (k === 'ref') v.current = el;
+                    else if (typeof v === 'boolean') { if (v) el.setAttribute(k, ''); }
+                    else if (v != null) el.setAttribute(k, v);
+                });
+            }
+            children.flat().forEach(child => {
+                if (child == null || typeof child === 'boolean') return;
+                if (typeof child === 'string' || typeof child === 'number') el.appendChild(document.createTextNode(child));
+                else if (child instanceof Node) el.appendChild(child);
+                else if (Array.isArray(child)) child.forEach(c => el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
+            });
+            return el;
+        };
+
+        const Icon = (name, className = '') => {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'currentColor');
+            svg.setAttribute('stroke-width', '2');
+            svg.setAttribute('stroke-linecap', 'round');
+            svg.setAttribute('stroke-linejoin', 'round');
+            if (className) svg.className = className;
+            svg.innerHTML = Icons[name] || '';
+            return svg;
+        };
+
+        // ===== PATIENT DATA =====
+        const patientsData = [
+            {id:"PAT-2024-001234",aadhar:"123456789012",mobile:"9876543210",name:"Sarah Mitchell",age:67,gender:"Female",dischargeDate:"2024-11-01",diagnosis:"Congestive Heart Failure (NYHA Class III)",primaryPhysician:"Dr. James Chen, MD",
+                vitals:{respiratoryRate:{value:22,unit:"breaths/min",normalRange:"12-20",trend:"up"},heartRate:{value:98,unit:"bpm",normalRange:"60-100",trend:"stable"},spo2:{value:92,unit:"%",normalRange:"95-100%",trend:"down"},temperature:{value:37.8,unit:"°C",normalRange:"36.1-37.2°C",trend:"up"},systolicBP:{value:142,unit:"mmHg",normalRange:"90-120",trend:"up"},diastolicBP:{value:88,unit:"mmHg",normalRange:"60-80",trend:"stable"},height:{value:165,unit:"cm",normalRange:"N/A",trend:"stable"},headCircumference:{value:56,unit:"cm",normalRange:"N/A",trend:"stable"},weight:{value:78.5,unit:"kg",normalRange:"N/A",trend:"up"},bmi:{value:28.8,unit:"kg/m²",normalRange:"18.5-24.9",trend:"up"}}
+            },
+            {id:"PAT-2024-002156",aadhar:"234567890123",mobile:"9876543211",name:"Rajesh Kumar",age:54,gender:"Male",dischargeDate:"2024-10-28",diagnosis:"COPD Exacerbation",primaryPhysician:"Dr. Priya Sharma, MD",
+                vitals:{respiratoryRate:{value:26,unit:"breaths/min",normalRange:"12-20",trend:"up"},heartRate:{value:108,unit:"bpm",normalRange:"60-100",trend:"up"},spo2:{value:88,unit:"%",normalRange:"95-100%",trend:"down"},temperature:{value:37.2,unit:"°C",normalRange:"36.1-37.2°C",trend:"stable"},systolicBP:{value:135,unit:"mmHg",normalRange:"90-120",trend:"up"},diastolicBP:{value:85,unit:"mmHg",normalRange:"60-80",trend:"stable"},height:{value:172,unit:"cm",normalRange:"N/A",trend:"stable"},headCircumference:{value:57,unit:"cm",normalRange:"N/A",trend:"stable"},weight:{value:68.2,unit:"kg",normalRange:"N/A",trend:"down"},bmi:{value:23.0,unit:"kg/m²",normalRange:"18.5-24.9",trend:"down"}}
+            },
+            {id:"PAT-2024-003789",aadhar:"345678901234",mobile:"9876543212",name:"Meera Patel",age:72,gender:"Female",dischargeDate:"2024-11-05",diagnosis:"Post-Operative Hip Replacement",primaryPhysician:"Dr. Arjun Reddy, MD",
+                vitals:{respiratoryRate:{value:18,unit:"breaths/min",normalRange:"12-20",trend:"stable"},heartRate:{value:82,unit:"bpm",normalRange:"60-100",trend:"stable"},spo2:{value:97,unit:"%",normalRange:"95-100%",trend:"stable"},temperature:{value:38.5,unit:"°C",normalRange:"36.1-37.2°C",trend:"up"},systolicBP:{value:118,unit:"mmHg",normalRange:"90-120",trend:"stable"},diastolicBP:{value:76,unit:"mmHg",normalRange:"60-80",trend:"stable"},height:{value:158,unit:"cm",normalRange:"N/A",trend:"stable"},headCircumference:{value:55,unit:"cm",normalRange:"N/A",trend:"stable"},weight:{value:62.0,unit:"kg",normalRange:"N/A",trend:"stable"},bmi:{value:24.8,unit:"kg/m²",normalRange:"18.5-24.9",trend:"stable"}}
+            },
+            {id:"PAT-2024-004567",aadhar:"456789012345",mobile:"9876543213",name:"Amit Singh",age:45,gender:"Male",dischargeDate:"2024-10-15",diagnosis:"Acute Myocardial Infarction (STEMI)",primaryPhysician:"Dr. Kavya Nair, MD",
+                vitals:{respiratoryRate:{value:20,unit:"breaths/min",normalRange:"12-20",trend:"stable"},heartRate:{value:72,unit:"bpm",normalRange:"60-100",trend:"stable"},spo2:{value:98,unit:"%",normalRange:"95-100%",trend:"stable"},temperature:{value:36.8,unit:"°C",normalRange:"36.1-37.2°C",trend:"stable"},systolicBP:{value:128,unit:"mmHg",normalRange:"90-120",trend:"up"},diastolicBP:{value:82,unit:"mmHg",normalRange:"60-80",trend:"up"},height:{value:178,unit:"cm",normalRange:"N/A",trend:"stable"},headCircumference:{value:58,unit:"cm",normalRange:"N/A",trend:"stable"},weight:{value:85.5,unit:"kg",normalRange:"N/A",trend:"up"},bmi:{value:26.9,unit:"kg/m²",normalRange:"18.5-24.9",trend:"up"}}
+            },
+            {id:"PAT-2024-005432",aadhar:"567890123456",mobile:"9876543214",name:"Lakshmi Devi",age:61,gender:"Female",dischargeDate:"2024-11-08",diagnosis:"Pneumonia with Sepsis",primaryPhysician:"Dr. Rohit Verma, MD",
+                vitals:{respiratoryRate:{value:28,unit:"breaths/min",normalRange:"12-20",trend:"up"},heartRate:{value:112,unit:"bpm",normalRange:"60-100",trend:"up"},spo2:{value:90,unit:"%",normalRange:"95-100%",trend:"down"},temperature:{value:39.1,unit:"°C",normalRange:"36.1-37.2°C",trend:"up"},systolicBP:{value:105,unit:"mmHg",normalRange:"90-120",trend:"down"},diastolicBP:{value:65,unit:"mmHg",normalRange:"60-80",trend:"down"},height:{value:155,unit:"cm",normalRange:"N/A",trend:"stable"},headCircumference:{value:54,unit:"cm",normalRange:"N/A",trend:"stable"},weight:{value:58.0,unit:"kg",normalRange:"N/A",trend:"down"},bmi:{value:24.1,unit:"kg/m²",normalRange:"18.5-24.9",trend:"down"}}
+            }
+        ];
+
+        // ===== UTILITY FUNCTIONS =====
+        const generateHistory = (base, variance, trend = 0) => {
+            const data = [];
+            for (let i = 6; i >= 0; i--) {
+                const dayVar = (Math.random() - 0.5) * variance;
+                const trendEffect = trend * (6 - i) * 0.1;
+                data.push(Math.round((base + dayVar + trendEffect) * 10) / 10);
+            }
+            return data;
+        };
+
+        const createHistory = (vitals) => ({
+            respiratoryRate: generateHistory(vitals.respiratoryRate.value, 3, vitals.respiratoryRate.trend === 'up' ? 0.2 : vitals.respiratoryRate.trend === 'down' ? -0.2 : 0),
+            heartRate: generateHistory(vitals.heartRate.value, 5, vitals.heartRate.trend === 'up' ? 0.2 : vitals.heartRate.trend === 'down' ? -0.2 : 0),
+            spo2: generateHistory(vitals.spo2.value, 2, vitals.spo2.trend === 'up' ? 0.2 : vitals.spo2.trend === 'down' ? -0.2 : 0),
+            temperature: generateHistory(vitals.temperature.value, 0.5, vitals.temperature.trend === 'up' ? 0.1 : vitals.temperature.trend === 'down' ? -0.1 : 0),
+            systolicBP: generateHistory(vitals.systolicBP.value, 8, vitals.systolicBP.trend === 'up' ? 0.3 : vitals.systolicBP.trend === 'down' ? -0.3 : 0),
+            diastolicBP: generateHistory(vitals.diastolicBP.value, 4, vitals.diastolicBP.trend === 'up' ? 0.2 : vitals.diastolicBP.trend === 'down' ? -0.2 : 0),
+            weight: generateHistory(vitals.weight.value, 1.5, vitals.weight.trend === 'up' ? 0.15 : vitals.weight.trend === 'down' ? -0.15 : 0),
+            bmi: generateHistory(vitals.bmi.value, 0.5, vitals.bmi.trend === 'up' ? 0.1 : vitals.bmi.trend === 'down' ? -0.1 : 0),
+            height: Array(7).fill(vitals.height.value)
+        });
+
+        const labels = ['Day -6', 'Day -5', 'Day -4', 'Day -3', 'Day -2', 'Day -1', 'Today'];
+
+        const getStatus = (key, value) => {
+            const t = {
+                respiratoryRate: {normal:[12,20],warning:[10,24],critical:[8,28]},
+                heartRate: {normal:[60,100],warning:[50,110],critical:[40,130]},
+                spo2: {normal:[95,100],warning:[90,94],critical:[0,89]},
+                temperature: {normal:[36.1,37.2],warning:[35.5,38.0],critical:[35.0,39.0]},
+                systolicBP: {normal:[90,120],warning:[121,139],critical:[140,200]},
+                diastolicBP: {normal:[60,80],warning:[81,89],critical:[90,120]},
+                bmi: {normal:[18.5,24.9],warning:[25,29.9],critical:[30,50]}
+            }[key];
+            if (!t) return 'normal';
+            if (value >= t.normal[0] && value <= t.normal[1]) return 'normal';
+            if (value >= t.warning[0] && value <= t.warning[1]) return 'warning';
+            return 'critical';
+        };
+
+        const getTrendIcon = (trend) => trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'minus';
+        const getTrendColor = (trend) => trend === 'up' ? 'text-red-500' : trend === 'down' ? 'text-blue-500' : 'text-slate-400';
+
+        const statusClass = (status) => ({normal:'status-normal badge-normal', warning:'status-warning badge-warning', critical:'status-critical badge-critical'}[status]);
+        const badgeClass = (status) => ({normal:'badge-normal', warning:'badge-warning', critical:'badge-critical'}[status]);
+        const riskClass = (risk) => ({normal:'bg-green-100 text-green-800', warning:'bg-amber-100 text-amber-800', critical:'bg-red-100 text-red-800'}[risk]);
+        const riskIcon = (risk) => ({normal:'check-circle-2', warning:'alert-triangle', critical:'alert-circle'}[risk]);
+
+        // ===== CHART RENDERING (Canvas) =====
+        function drawChart(canvas, data, color, label) {
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width = canvas.offsetWidth;
+            const h = canvas.height = canvas.offsetHeight;
+            const padding = {top: 10, right: 10, bottom: 25, left: 35};
+            const gw = w - padding.left - padding.right;
+            const gh = h - padding.top - padding.bottom;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            const minVal = Math.min(...data);
+            const maxVal = Math.max(...data);
+            const range = maxVal - minVal || 1;
+            
+            const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + gh);
+            gradient.addColorStop(0, color + '40');
+            gradient.addColorStop(1, color + '00');
+            
+            // Grid lines
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding.top + (gh * i / 4);
+                ctx.beginPath(); ctx.moveTo(padding.left, y); ctx.lineTo(w - padding.right, y); ctx.stroke();
+            }
+            
+            // Y-axis labels
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '10px system-ui';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const val = maxVal - (range * i / 4);
+                const y = padding.top + (gh * i / 4) + 3;
+                ctx.fillText(val.toFixed(1), padding.left - 5, y);
+            }
+            
+            // X-axis labels
+            ctx.textAlign = 'center';
+            data.forEach((_, i) => {
+                const x = padding.left + (gw * i / (data.length - 1));
+                ctx.fillText(labels[i], x, h - 5);
+            });
+            
+            // Area fill
+            ctx.beginPath();
+            ctx.moveTo(padding.left, padding.top + gh);
+            data.forEach((v, i) => {
+                const x = padding.left + (gw * i / (data.length - 1));
+                const y = padding.top + gh - ((v - minVal) / range * gh);
+                if (i === 0) ctx.lineTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            data.slice().reverse().forEach((v, i) => {
+                const x = padding.left + (gw * (data.length - 1 - i) / (data.length - 1));
+                ctx.lineTo(x, padding.top + gh);
+            });
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Line
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            data.forEach((v, i) => {
+                const x = padding.left + (gw * i / (data.length - 1));
+                const y = padding.top + gh - ((v - minVal) / range * gh);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            // Points
+            data.forEach((v, i) => {
+                const x = padding.left + (gw * i / (data.length - 1));
+                const y = padding.top + gh - ((v - minVal) / range * gh);
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
+
+        // ===== STATE MANAGEMENT =====
+        let currentState = {
+            view: 'login', // 'login' | 'dashboard'
+            loginMethod: 'aadhar', // 'aadhar' | 'mobile'
+            aadharNumber: '',
+            mobileNumber: '',
+            otp: '',
+            otpSent: false,
+            error: '',
+            loading: false,
+            currentPatient: null,
+            activeTab: 0,
+            tempUnit: 'celsius',
+            weightUnit: 'kg',
+            heightUnit: 'cm',
+            vitals: {},
+            history: {},
+            quickEntryData: {},
+            patientDropdownOpen: false
+        };
+
+        const chartColors = {
+            respiratoryRate: '#ef4444', heartRate: '#f59e0b', spo2: '#3b82f6',
+            temperature: '#ef4444', systolicBP: '#ef4444', diastolicBP: '#f59e0b',
+            weight: '#0d9488', bmi: '#8b5cf6'
+        };
+
+        // ===== RENDER FUNCTIONS =====
+        function render() {
+            const app = document.getElementById('app');
+            app.innerHTML = '';
+            
+            if (currentState.view === 'login') {
+                app.appendChild(renderLogin());
+            } else {
+                app.appendChild(renderDashboard());
+            }
+            
+            // Draw charts after DOM update
+            setTimeout(drawAllCharts, 0);
+        }
+
+        function drawAllCharts() {
+            document.querySelectorAll('.chart-canvas').forEach(canvas => {
+                const dataAttr = canvas.dataset.chartData;
+                const color = canvas.dataset.chartColor;
+                const label = canvas.dataset.chartLabel;
+                if (dataAttr) {
+                    const data = JSON.parse(dataAttr);
+                    drawChart(canvas, data, color, label);
+                }
+            });
+        }
+
+        function setState(partial) {
+            currentState = {...currentState, ...partial};
+            render();
+        }
+
+        // ===== LOGIN RENDER =====
+        function renderLogin() {
+            const s = currentState;
+            return h('div', {className: 'login-bg min-h-screen flex items-center justify-center p-4'}, [
+                h('div', {className: 'w-full max-w-md animate-slide-up'}, [
+                    h('div', {className: 'text-center mb-8'}, [
+                        h('div', {className: 'w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-600 to-teal-700 flex items-center justify-center shadow-lg'}, [
+                            Icon('heart-pulse', 'w-10 h-10 text-white')
+                        ]),
+                        h('h1', {className: 'text-3xl font-bold text-slate-900 mb-1'}, 'DistoHelp'),
+                        h('p', {className: 'text-slate-600'}, 'Post-Discharge Deterioration Monitor'),
+                        h('p', {className: 'text-sm text-slate-500 mt-2'}, 'Secure Patient Portal')
+                    ]),
+                    h('div', {className: 'bg-white rounded-xl shadow-sm border border-slate-200 p-1 mb-6 flex'}, [
+                        h('button', {
+                            onClick: () => setState({loginMethod: 'aadhar', error: '', otpSent: false}),
+                            className: `flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${s.loginMethod === 'aadhar' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`
+                        }, [Icon('id-card', 'w-4 h-4 inline mr-2'), 'Aadhar Number']),
+                        h('button', {
+                            onClick: () => setState({loginMethod: 'mobile', error: '', otpSent: false}),
+                            className: `flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${s.loginMethod === 'mobile' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`
+                        }, [Icon('smartphone', 'w-4 h-4 inline mr-2'), 'Mobile + OTP'])
+                    ]),
+                    s.loginMethod === 'aadhar' && !s.otpSent && renderAadharForm(),
+                    s.loginMethod === 'mobile' && !s.otpSent && renderMobileForm(),
+                    s.otpSent && renderOtpForm(),
+                    h('div', {className: 'mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200'}, [
+                        h('p', {className: 'text-xs font-medium text-slate-700 mb-3 flex items-center gap-1 justify-center'}, [Icon('info', 'w-3 h-3'), 'Demo Credentials (Click to auto-fill)']),
+                        h('div', {className: 'space-y-2 text-xs'}, [
+                            renderDemoBtn('Sarah Mitchell', 'aadhar', '123456789012'),
+                            renderDemoBtn('Rajesh Kumar', 'aadhar', '234567890123'),
+                            renderDemoBtn('Meera Patel', 'mobile', '9876543212'),
+                            renderDemoBtn('Amit Singh', 'aadhar', '456789012345'),
+                            renderDemoBtn('Lakshmi Devi', 'mobile', '9876543214'),
+                        ])
+                    ]),
+                    h('p', {className: 'mt-6 text-center text-xs text-slate-500'}, ['© 2024 DistoHelp • ', h('span', {className: 'font-medium'}, 'Secure Healthcare Monitoring')])
+                ])
+            ]);
+        }
+
+        function renderDemoBtn(name, method, value) {
+            return h('button', {
+                onClick: () => setState({loginMethod: method, [method === 'aadhar' ? 'aadharNumber' : 'mobileNumber']: value, error: '', otpSent: false}),
+                className: 'w-full text-left p-2 hover:bg-white rounded-lg transition-colors text-slate-600 hover:text-slate-900'
+            }, name + ' — ' + (method === 'aadhar' ? 'Aadhar: ' + value.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3') : 'Mobile: ' + value.replace(/(\d{5})(\d{5})/, '$1 $2')));
+        }
+
+        function renderAadharForm() {
+            const s = currentState;
+            return h('form', {onSubmit: handleAadharSubmit, className: 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4'}, [
+                h('div', null, [
+                    h('label', {className: 'block text-sm font-medium text-slate-700 mb-2'}, 'Aadhar Number'),
+                    h('input', {
+                        type: 'text', value: s.aadharNumber,
+                        onChange: e => setState({aadharNumber: e.target.value.replace(/\D/g, '').slice(0, 12)}),
+                        placeholder: '1234 5678 9012', maxLength: 14,
+                        className: 'input-field', autoComplete: 'off'
+                    }),
+                    h('p', {className: 'mt-1 text-xs text-slate-500'}, 'Enter 12-digit Aadhar number')
+                ]),
+                s.error && h('div', {className: 'p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2'}, [Icon('alert-circle', 'w-4 h-4 flex-shrink-0'), s.error]),
+                h('button', {type: 'submit', disabled: s.loading, className: 'btn-primary'}, s.loading ? [
+                    h('div', {className: 'w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin'}),
+                    'Verifying...'
+                ] : [Icon('lock-open', 'w-5 h-5'), 'Login with Aadhar'])
+            ]);
+        }
+
+        function renderMobileForm() {
+            const s = currentState;
+            return h('form', {onSubmit: handleMobileSubmit, className: 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4'}, [
+                h('div', null, [
+                    h('label', {className: 'block text-sm font-medium text-slate-700 mb-2'}, 'Mobile Number'),
+                    h('input', {
+                        type: 'tel', value: s.mobileNumber,
+                        onChange: e => setState({mobileNumber: e.target.value.replace(/\D/g, '').slice(0, 10)}),
+                        placeholder: '98765 43210', maxLength: 10,
+                        className: 'input-field', autoComplete: 'tel'
+                    }),
+                    h('p', {className: 'mt-1 text-xs text-slate-500'}, 'OTP will be sent to this number')
+                ]),
+                s.error && h('div', {className: 'p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2'}, [Icon('alert-circle', 'w-4 h-4 flex-shrink-0'), s.error]),
+                h('button', {type: 'submit', disabled: s.loading, className: 'btn-primary'}, s.loading ? [
+                    h('div', {className: 'w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin'}),
+                    'Sending OTP...'
+                ] : [Icon('send', 'w-5 h-5'), 'Send OTP'])
+            ]);
+        }
+
+        function renderOtpForm() {
+            const s = currentState;
+            return h('form', {onSubmit: handleOtpSubmit, className: 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4 animate-fade-in'}, [
+                h('div', {className: 'text-center mb-2'}, [
+                    Icon('shield-check', 'w-12 h-12 mx-auto text-teal-600 mb-2'),
+                    h('p', {className: 'text-slate-600'}, `OTP sent to ${s.mobileNumber.slice(0,5)}****${s.mobileNumber.slice(-2)}`)
+                ]),
+                h('div', null, [
+                    h('label', {className: 'block text-sm font-medium text-slate-700 mb-2'}, 'Enter 6-Digit OTP'),
+                    h('input', {
+                        type: 'text', value: s.otp,
+                        onChange: e => setState({otp: e.target.value.replace(/\D/g, '').slice(0, 6)}),
+                        placeholder: '• • • • • •', maxLength: 6,
+                        className: 'input-field text-2xl tracking-widest text-center font-mono', autoComplete: 'one-time-code', autoFocus: true
+                    })
+                ]),
+                s.error && h('div', {className: 'p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2'}, [Icon('alert-circle', 'w-4 h-4 flex-shrink-0'), s.error]),
+                h('div', {className: 'flex items-center justify-between'}, [
+                    h('button', {type: 'button', onClick: () => setState({otpSent: false, otp: '', mobileNumber: ''}), className: 'text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1'}, [Icon('arrow-left', 'w-4 h-4'), 'Change Number']),
+                    h('button', {type: 'button', onClick: () => setState({otp: ''}), className: 'text-sm text-slate-500 hover:text-slate-700 font-medium'}, 'Resend OTP')
+                ]),
+                h('button', {type: 'submit', disabled: s.loading, className: 'btn-primary'}, s.loading ? [
+                    h('div', {className: 'w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin'}),
+                    'Verifying...'
+                ] : [Icon('lock-open', 'w-5 h-5'), 'Verify & Login'])
+            ]);
+        }
+
+        // ===== LOGIN HANDLERS =====
+        function handleAadharSubmit(e) {
+            e.preventDefault();
+            const s = currentState;
+            if (!/^\d{12}$/.test(s.aadharNumber)) return setState({error: 'Please enter a valid 12-digit Aadhar number'});
+            const patient = patientsData.find(p => p.aadhar === s.aadharNumber);
+            if (patient) {
+                setState({loading: true});
+                setTimeout(() => { setState({view: 'dashboard', currentPatient: patient, loading: false, vitals: {...patient.vitals}, history: createHistory(patient.vitals), quickEntryData: {...patient.vitals}, activeTab: 0}); }, 800);
+            } else setState({error: 'No patient found with this Aadhar number'});
+        }
+
+        function handleMobileSubmit(e) {
+            e.preventDefault();
+            const s = currentState;
+            if (!/^\d{10}$/.test(s.mobileNumber)) return setState({error: 'Please enter a valid 10-digit mobile number'});
+            const patient = patientsData.find(p => p.mobile === s.mobileNumber);
+            if (patient) setState({otpSent: true, otp: '', error: ''});
+            else setState({error: 'No patient found with this mobile number'});
+        }
+
+        function handleOtpSubmit(e) {
+            e.preventDefault();
+            const s = currentState;
+            if (!/^\d{6}$/.test(s.otp)) return setState({error: 'Please enter the 6-digit OTP'});
+            const patient = patientsData.find(p => p.mobile === s.mobileNumber);
+            if (patient) {
+                setState({loading: true});
+                setTimeout(() => { setState({view: 'dashboard', currentPatient: patient, loading: false, vitals: {...patient.vitals}, history: createHistory(patient.vitals), quickEntryData: {...patient.vitals}, activeTab: 0}); }, 800);
+            }
+        }
+
+        // ===== DASHBOARD RENDER =====
+        function renderDashboard() {
+            const s = currentState;
+            const p = s.currentPatient;
+            if (!p) return renderLogin();
+            
+            const overallRisk = Object.keys(s.vitals).some(k => getStatus(k, s.vitals[k].value) === 'critical') ? 'critical' :
+                               Object.keys(s.vitals).some(k => getStatus(k, s.vitals[k].value) === 'warning') ? 'warning' : 'normal';
+            
+            return h('div', {className: 'min-h-screen bg-slate-50'}, [
+                h('nav', {className: 'bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm'}, [
+                    h('div', {className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}, [
+                        h('div', {className: 'flex items-center justify-between h-16'}, [
+                            h('div', {className: 'flex items-center gap-3'}, [
+                                h('div', {className: 'w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center'}, [Icon('heart-pulse', 'w-6 h-6 text-white')]),
+                                h('div', null, [h('h1', {className: 'text-xl font-bold text-slate-900'}, 'DistoHelp'), h('p', {className: 'text-xs text-slate-500'}, 'Post-Discharge Deterioration Monitor')])
+                            ]),
+                            h('div', {className: 'hidden md:flex items-center gap-6 text-sm'}, [
+                                h('div', {className: 'text-right'}, [h('p', {className: 'font-semibold text-slate-900'}, p.name), h('p', {className: 'text-slate-500'}, `${p.age} years • ${p.gender}`)]),
+                                h('div', {className: 'text-right'}, [h('p', {className: 'font-semibold text-slate-900'}, `Discharged: ${new Date(p.dischargeDate).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`), h('p', {className: 'text-slate-500'}, p.diagnosis)]),
+                                h('div', {className: `flex items-center gap-2 px-3 py-1.5 rounded-full ${riskClass(overallRisk)}`}, [Icon(riskIcon(overallRisk), 'w-4 h-4'), h('span', {className: 'font-medium capitalize'}, overallRisk, ' Risk')])
+                            ]),
+                            h('div', {className: 'md:hidden flex items-center gap-2'}, [
+                                h('div', {className: `flex items-center gap-2 px-3 py-1.5 rounded-full ${riskClass(overallRisk)}`}, [Icon(riskIcon(overallRisk), 'w-4 h-4'), h('span', {className: 'font-medium text-sm capitalize'}, overallRisk)])
+                            ]),
+                            renderPatientSelector()
+                        ])
+                    ])
+                ]),
+                h('main', {className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'}, [
+                    h('div', {className: 'bg-white rounded-xl border border-slate-200 shadow-sm mb-6 overflow-hidden'}, [
+                        h('div', {className: 'border-b border-slate-200 overflow-x-auto'}, [
+                            h('nav', {className: 'flex gap-1 px-2 py-1 min-w-max'}, [
+                                {id:0,label:'Vital Signs Panel',icon:'layout-grid'},
+                                {id:1,label:'Cardiopulmonary & Temp',icon:'heart-pulse'},
+                                {id:2,label:'Anthropometrics & Growth',icon:'ruler'},
+                                {id:3,label:'Quick Entry & Alerts',icon:'clipboard-list'}
+                            ].map(tab => h('button', {
+                                onClick: () => setState({activeTab: tab.id}),
+                                className: `tab-btn ${s.activeTab === tab.id ? 'tab-active' : 'tab-inactive'}`
+                            }, [Icon(tab.icon, 'w-4 h-4'), tab.label])))
+                        ])
+                    ]),
+                    s.activeTab === 0 && renderVitalSignsPanel(),
+                    s.activeTab === 1 && renderCardiopulmonaryTab(),
+                    s.activeTab === 2 && renderAnthropometricsTab(),
+                    s.activeTab === 3 && renderQuickEntryTab()
+                ])
+            ]);
+        }
+
+        function renderPatientSelector() {
+            const s = currentState;
+            const p = s.currentPatient;
+            return h('div', {className: 'relative'}, [
+                h('button', {onClick: () => setState({patientDropdownOpen: !s.patientDropdownOpen}), className: 'flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200 shadow-md hover:bg-slate-50 transition-colors'}, [
+                    h('div', {className: 'w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center'}, [Icon('users', 'w-4 h-4 text-teal-600')]),
+                    h('span', {className: 'font-medium text-slate-900 hidden sm:block'}, p.name),
+                    Icon('chevron-down', 'w-4 h-4 text-slate-500')
+                ]),
+                h('div', {id: 'patient-dropdown', className: `${s.patientDropdownOpen ? '' : 'hidden'} absolute right-0 mt-2 w-64 bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden z-50 animate-fade-in'}, [
+                    h('div', {className: 'p-2'}, patientsData.map(pat => h('button', {
+                        onClick: () => { setState({currentPatient: pat, vitals: {...pat.vitals}, history: createHistory(pat.vitals), quickEntryData: {...pat.vitals}, activeTab: 0, patientDropdownOpen: false}); },
+                        className: `w-full px-3 py-2 rounded-lg text-sm flex items-center gap-3 transition-colors ${pat.id === p.id ? 'bg-teal-50 text-teal-700' : 'text-slate-700 hover:bg-slate-50'}`
+                    }, [
+                        h('div', {className: `w-8 h-8 rounded-full flex items-center justify-center ${pat.gender === 'Female' ? 'bg-pink-100' : 'bg-blue-100'}`}, [Icon('user', `w-4 h-4 ${pat.gender === 'Female' ? 'text-pink-600' : 'text-blue-600'}`)]),
+                        h('div', {className: 'flex-1 text-left'}, [h('p', {className: 'font-medium'}, pat.name), h('p', {className: 'text-xs text-slate-500'}, `${pat.age}y • ${pat.diagnosis}`)]),
+                        pat.id === p.id && Icon('check', 'w-4 h-4 text-teal-600')
+                    ]))),
+                    h('hr', {className: 'mx-2 border-slate-200'}),
+                    h('button', {onClick: () => setState({view: 'login', currentPatient: null, patientDropdownOpen: false}), className: 'w-full px-3 py-2 rounded-lg text-sm flex items-center gap-3 text-red-600 hover:bg-red-50 transition-colors'}, [Icon('log-out', 'w-4 h-4'), 'Logout'])
+                ])
+            ]);
+        }
+
+        // ===== TAB 1: VITAL SIGNS PANEL =====
+        function renderVitalSignsPanel() {
+            const s = currentState;
+            const configs = [
+                {key:'respiratoryRate',label:'Respiratory Rate',icon:'wind',color:chartColors.respiratoryRate},
+                {key:'heartRate',label:'Heart Rate',icon:'heart-pulse',color:chartColors.heartRate},
+                {key:'spo2',label:'Oxygen Saturation',icon:'droplet',color:chartColors.spo2},
+                {key:'temperature',label:'Body Temperature',icon:'thermometer',color:chartColors.temperature},
+                {key:'systolicBP',label:'Systolic BP',icon:'gauge',color:chartColors.systolicBP},
+                {key:'diastolicBP',label:'Diastolic BP',icon:'gauge',color:chartColors.diastolicBP},
+                {key:'height',label:'Body Height',icon:'ruler',color:'#64748b'},
+                {key:'headCircumference',label:'Head Circumference',icon:'circle',color:'#64748b'},
+                {key:'weight',label:'Body Weight',icon:'scale',color:chartColors.weight},
+                {key:'bmi',label:'BMI',icon:'calculator',color:chartColors.bmi}
+            ];
+            
+            const displayTemp = v => s.tempUnit === 'fahrenheit' ? Math.round((v * 9/5) + 32) : v;
+            const displayTempUnit = s.tempUnit === 'fahrenheit' ? '°F' : '°C';
+            const normalTempRange = s.tempUnit === 'fahrenheit' ? '97-99°F' : '36.1-37.2°C';
+            const displayWeight = v => s.weightUnit === 'lbs' ? Math.round(v * 2.20462 * 10) / 10 : v;
+            const displayWeightUnit = s.weightUnit === 'lbs' ? 'lbs' : 'kg';
+            const displayHeight = v => s.heightUnit === 'inches' ? Math.round(v / 2.54 * 10) / 10 : v;
+            const displayHeightUnit = s.heightUnit === 'inches' ? 'in' : 'cm';
+            
+            return h('div', {className: 'space-y-6 animate-fade-in'}, [
+                h('div', {className: 'flex items-center justify-between'}, [h('h2', {className: 'text-2xl font-bold text-slate-900'}, 'Vital Signs Overview'), h('p', {className: 'text-sm text-slate-500'}, 'Real-time monitoring dashboard')]),
+                h('div', {className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'}, configs.map(config => {
+                    const v = s.vitals[config.key];
+                    const status = getStatus(config.key, v.value);
+                    let displayValue = v.value, displayUnit = v.unit, displayRange = v.normalRange;
+                    if (config.key === 'temperature') { displayValue = displayTemp(v.value); displayUnit = displayTempUnit; displayRange = normalTempRange; }
+                    else if (config.key === 'weight') { displayValue = displayWeight(v.value); displayUnit = displayWeightUnit; }
+                    else if (config.key === 'height') { displayValue = displayHeight(v.value); displayUnit = displayHeightUnit; }
+                    
+                    if (config.key === 'systolicBP') {
+                        return h('div', {key: config.key, className: `bg-white rounded-xl p-5 border ${statusClass(status)} shadow-sm hover:shadow-md transition-shadow animate-fade-in'}, [
+                            h('div', {className: 'flex items-start justify-between mb-3'}, [
+                                h('div', {className: 'flex items-center gap-2'}, [Icon(config.icon, `w-5 h-5 ${config.color}`), h('span', {className: 'font-medium text-slate-700'}, 'Blood Pressure')]),
+                                h('span', {className: `px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClass(status)}`}, status.charAt(0).toUpperCase() + status.slice(1))
+                            ]),
+                            h('div', {className: 'flex items-baseline gap-1 mb-1'}, [
+                                h('span', {className: 'text-3xl font-bold text-slate-900'}, s.vitals.systolicBP.value),
+                                h('span', {className: 'text-slate-500'}, '/'),
+                                h('span', {className: 'text-3xl font-bold text-slate-900'}, s.vitals.diastolicBP.value),
+                                h('span', {className: 'text-slate-500'}, 'mmHg')
+                            ]),
+                            h('div', {className: 'flex items-center justify-between text-sm text-slate-500 mb-3'}, [
+                                h('span', null, `Ref: ${s.vitals.systolicBP.normalRange}/${s.vitals.diastolicBP.normalRange}`),
+                                h('div', {className: `flex items-center gap-1 ${getTrendColor(v.trend)}`}, [Icon(getTrendIcon(v.trend), 'w-4 h-4'), h('span', null, v.trend.charAt(0).toUpperCase() + v.trend.slice(1))])
+                            ]),
+                            h('div', {className: 'chart-container'}, [
+                                h('canvas', {className: 'chart-canvas w-full h-full', 'data-chart-data': JSON.stringify(s.history.systolicBP || []), 'data-chart-color': chartColors.systolicBP, 'data-chart-label': 'Systolic BP'})
+                            ])
+                        ]);
+                    }
+                    if (config.key === 'diastolicBP') return null;
+                    
+                    const sc = statusClass(status);
+                    return h('div', {key: config.key, className: `bg-white rounded-xl p-5 border ${sc} shadow-sm hover:shadow-md transition-shadow animate-fade-in'}, [
+                        h('div', {className: 'flex items-start justify-between mb-3'}, [
+                            h('div', {className: 'flex items-center gap-2'}, [Icon(config.icon, `w-5 h-5 ${config.color}`), h('span', {className: 'font-medium text-slate-700'}, config.label)]),
+                            h('span', {className: `px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClass(status)}`}, status.charAt(0).toUpperCase() + status.slice(1))
+                        ]),
+                        h('div', {className: 'flex items-baseline gap-1 mb-2'}, [h('span', {className: 'text-3xl font-bold text-slate-900'}, displayValue), h('span', {className: 'text-slate-500'}, displayUnit)]),
+                        h('div', {className: 'flex items-center justify-between text-sm text-slate-500 mb-3'}, [
+                            h('span', null, `Ref: ${displayRange}`),
+                            h('div', {className: `flex items-center gap-1 ${getTrendColor(v.trend)}`}, [Icon(getTrendIcon(v.trend), 'w-4 h-4'), h('span', null, v.trend.charAt(0).toUpperCase() + v.trend.slice(1))])
+                        ]),
+                        h('div', {className: 'chart-container'}, [
+                            h('canvas', {className: 'chart-canvas w-full h-full', 'data-chart-data': JSON.stringify(s.history[config.key] || []), 'data-chart-color': config.color, 'data-chart-label': config.label})
+                        ])
+                    ]);
+                }))
+            ]);
+        }
+
+        // ===== TAB 2: CARDIOPULMONARY =====
+        function renderCardiopulmonaryTab() {
+            const s = currentState;
+            const displayTemp = v => s.tempUnit === 'fahrenheit' ? Math.round((v * 9/5) + 32) : v;
+            const displayTempUnit = s.tempUnit === 'fahrenheit' ? '°F' : '°C';
+            const normalTempRange = s.tempUnit === 'fahrenheit' ? '97-99°F' : '36.1-37.2°C';
+            
+            const params = [
+                {key:'respiratoryRate',label:'Respiratory Rate',unit:'breaths/min',icon:'wind',color:chartColors.respiratoryRate,step:1,min:0,max:50,range:'12-20'},
+                {key:'heartRate',label:'Heart Rate',unit:'bpm',icon:'heart-pulse',color:chartColors.heartRate,step:1,min:30,max:200,range:'60-100'},
+                {key:'spo2',label:'Oxygen Saturation (SpO₂)',unit:'%',icon:'droplet',color:chartColors.spo2,step:1,min:70,max:100,range:'95-100%'},
+                {key:'temperature',label:'Body Temperature',unit:displayTempUnit,icon:'thermometer',color:chartColors.temperature,step:0.1,min:30,max:42,range:normalTempRange},
+                {key:'systolicBP',label:'Systolic BP',unit:'mmHg',icon:'gauge',color:chartColors.systolicBP,step:1,min:60,max:250,range:'90-120'},
+                {key:'diastolicBP',label:'Diastolic BP',unit:'mmHg',icon:'gauge',color:chartColors.diastolicBP,step:1,min:30,max:150,range:'60-80'}
+            ];
+            
+            return h('div', {className: 'space-y-6 animate-fade-in'}, [
+                h('div', {className: 'flex items-center justify-between'}, [
+                    h('div', null, [h('h2', {className: 'text-2xl font-bold text-slate-900'}, 'Cardiopulmonary & Temperature'), h('p', {className: 'text-sm text-slate-500'}, 'Detailed monitoring with trend analysis')]),
+                    h('div', {className: 'flex items-center gap-2 bg-slate-100 rounded-lg p-1'}, [
+                        h('button', {onClick: () => setState({tempUnit: 'celsius'}), className: `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${s.tempUnit === 'celsius' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}, '°C'),
+                        h('button', {onClick: () => setState({tempUnit: 'fahrenheit'}), className: `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${s.tempUnit === 'fahrenheit' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}, '°F')
+                    ])
+                ]),
+                h('div', {className: 'grid grid-cols-1 lg:grid-cols-2 gap-6'}, params.map(param => {
+                    const v = s.vitals[param.key];
+                    const status = getStatus(param.key, v.value);
+                    let displayValue = v.value;
+                    if (param.key === 'temperature') displayValue = displayTemp(v.value);
+                    
+                    const borderClass = status === 'normal' ? 'border-l-4 border-l-green-500' : status === 'warning' ? 'border-l-4 border-l-amber-500' : 'border-l-4 border-l-red-500';
+                    
+                    return h('div', {key: param.key, className: 'bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden'}, [
+                        h('div', {className: `p-5 border-b border-slate-200 ${borderClass} bg-slate-50/50'}, [
+                            h('div', {className: 'flex items-center justify-between'}, [
+                                h('div', {className: 'flex items-center gap-3'}, [
+                                    h('div', {className: `w-10 h-10 rounded-lg flex items-center justify-center ${param.color}20`}, [Icon(param.icon, `w-5 h-5 ${param.color}`)]),
+                                    h('div', null, [h('h3', {className: 'font-semibold text-slate-900'}, param.label), h('p', {className: 'text-xs text-slate-500'}, `Reference: ${param.range}`)])
+                                ]),
+                                h('span', {className: `px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClass(status)}`}, status.charAt(0).toUpperCase() + status.slice(1))
+                            ])
+                        ]),
+                        h('div', {className: 'p-5 space-y-4'}, [
+                            h('div', {className: 'flex items-center gap-4'}, [
+                                h('label', {className: 'text-sm font-medium text-slate-700 w-24'}, 'Current'),
+                                h('div', {className: 'flex-1 flex items-center gap-2'}, [
+                                    h('input', {type:'number',step:param.step,min:param.min,max:param.max,value:displayValue,onChange:e=>{let val=parseFloat(e.target.value);if(param.key==='temperature'&&s.tempUnit==='fahrenheit')val=(val-32)*5/9;updateVital(param.key,val);},className:'w-24 px-3 py-2 border border-slate-200 rounded-lg text-center text-lg font-mono focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent'}),
+                                    h('span', {className: 'text-slate-500 font-medium'}, param.unit)
+                                ]),
+                                h('div', {className: `flex items-center gap-1 ${getTrendColor(v.trend)}`}, [Icon(getTrendIcon(v.trend), 'w-4 h-4'), h('span', {className: 'text-sm'}, v.trend)])
+                            ]),
+                            h('div', {className: 'chart-container'}, [h('canvas', {className: 'chart-canvas w-full h-full', 'data-chart-data': JSON.stringify(s.history[param.key] || []), 'data-chart-color': param.color, 'data-chart-label': param.label})]),
+                            h('div', {className: 'pt-2 border-t border-slate-100'}, [
+                                h('p', {className: 'text-xs font-medium text-slate-700 mb-2'}, 'Thresholds'),
+                                h('div', {className: 'flex items-center gap-2 text-xs'}, [
+                                    h('div', {className: 'flex items-center gap-1'}, [h('span', {className: 'w-3 h-3 rounded-full bg-green-500'}), h('span', {className: 'text-slate-600'}, 'Normal')]),
+                                    h('div', {className: 'flex items-center gap-1'}, [h('span', {className: 'w-3 h-3 rounded-full bg-amber-500'}), h('span', {className: 'text-slate-600'}, 'Warning')]),
+                                    h('div', {className: 'flex items-center gap-1'}, [h('span', {className: 'w-3 h-3 rounded-full bg-red-500'}), h('span', {className: 'text-slate-600'}, 'Critical')])
+                                ])
+                            ])
+                        ])
+                    ]);
+                }))
+            ]);
+        }
+
+        // ===== TAB 3: ANTHROPOMETRICS =====
+        function renderAnthropometricsTab() {
+            const s = currentState;
+            const heightVal = s.vitals.height.value;
+            const weightVal = s.vitals.weight.value;
+            const calculateBMI = (h, w) => Math.round((w / ((h/100)*(h/100))) * 10) / 10;
+            const bmiVal = calculateBMI(heightVal, weightVal);
+            const getBMICategory = (bmi) => bmi < 18.5 ? {label:'Underweight',color:'text-blue-600',bg:'bg-blue-100'} : bmi < 25 ? {label:'Normal',color:'text-green-600',bg:'bg-green-100'} : bmi < 30 ? {label:'Overweight',color:'text-amber-600',bg:'bg-amber-100'} : {label:'Obese',color:'text-red-600',bg:'bg-red-100'};
+            const bmiCategory = getBMICategory(bmiVal);
+            
+            const displayWeight = v => s.weightUnit === 'lbs' ? Math.round(v * 2.20462 * 10) / 10 : v;
+            const displayWeightUnit = s.weightUnit === 'lbs' ? 'lbs' : 'kg';
+            const displayHeight = v => s.heightUnit === 'inches' ? Math.round(v / 2.54 * 10) / 10 : v;
+            const displayHeightUnit = s.heightUnit === 'inches' ? 'in' : 'cm';
+            
+            return h('div', {className: 'space-y-6 animate-fade-in'}, [
+                h('div', {className: 'flex items-center justify-between'}, [
+                    h('div', null, [h('h2', {className: 'text-2xl font-bold text-slate-900'}, 'Anthropometrics & Growth'), h('p', {className: 'text-sm text-slate-500'}, 'Body measurements with automatic BMI calculation')]),
+                    h('div', {className: 'flex items-center gap-4'}, [
+                        h('div', {className: 'flex items-center gap-2 bg-slate-100 rounded-lg p-1'}, [
+                            h('button', {onClick: () => setState({heightUnit: 'cm'}), className: `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${s.heightUnit === 'cm' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}, 'cm'),
+                            h('button', {onClick: () => setState({heightUnit: 'inches'}), className: `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${s.heightUnit === 'inches' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}, 'in')
+                        ]),
+                        h('div', {className: 'flex items-center gap-2 bg-slate-100 rounded-lg p-1'}, [
+                            h('button', {onClick: () => setState({weightUnit: 'kg'}), className: `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${s.weightUnit === 'kg' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}, 'kg'),
+                            h('button', {onClick: () => setState({weightUnit: 'lbs'}), className: `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${s.weightUnit === 'lbs' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}, 'lbs')
+                        ])
+                    ])
+                ]),
+                h('div', {className: 'bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden'}, [
+                    h('div', {className: 'p-6 bg-gradient-to-r from-teal-600 to-teal-700 text-white'}, [
+                        h('div', {className: 'flex items-center justify-between'}, [
+                            h('div', null, [h('p', {className: 'text-teal-100 text-sm mb-1'}, 'Body Mass Index (BMI)'), h('div', {className: 'flex items-baseline gap-2'}, [h('span', {className: 'text-5xl font-bold'}, bmiVal), h('span', {className: 'text-teal-200'}, 'kg/m²')])]),
+                            h('div', {className: `text-right ${bmiCategory.bg} bg-white/20 backdrop-blur-sm rounded-full px-4 py-2`}, [h('p', {className: `text-sm font-semibold ${bmiCategory.color.replace('600','400')}`}, bmiCategory.label), h('p', {className: 'text-xs text-teal-100'}, 'Category')])
+                        ]),
+                        h('div', {className: 'mt-4 flex items-center gap-6 text-sm text-teal-100'}, [
+                            h('div', {className: 'flex items-center gap-2'}, [Icon('ruler', 'w-4 h-4'), h('span', null, `Height: ${displayHeight(heightVal)}${displayHeightUnit}`)]),
+                            h('div', {className: 'flex items-center gap-2'}, [Icon('scale', 'w-4 h-4'), h('span', null, `Weight: ${displayWeight(weightVal)}${displayWeightUnit}`)])
+                        ])
+                    ]),
+                    h('div', {className: 'p-6'}, [
+                        h('div', {className: 'relative h-8 rounded-full bg-gradient-to-r from-blue-500 via-green-500 to-amber-500 to-red-500 mb-4'}, [
+                            h('div', {className: 'absolute top-0 bottom-0 w-1 bg-white shadow-lg', style: {left: `${Math.min(Math.max((bmiVal - 15) / 25 * 100, 0), 100)}%`}})
+                        ]),
+                        h('div', {className: 'flex justify-between text-xs text-slate-500'}, [h('span',null,'15'),h('span',null,'18.5'),h('span',null,'25'),h('span',null,'30'),h('span',null,'40+')])
+                    ])
+                ]),
+                h('div', {className: 'grid grid-cols-1 lg:grid-cols-3 gap-6'}, [
+                    h('div', {className: 'bg-white rounded-xl border border-slate-200 shadow-sm p-6'}, [
+                        h('div', {className: 'flex items-center gap-3 mb-4'}, [h('div', {className: 'w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center'}, [Icon('ruler', 'w-6 h-6 text-blue-600')]), h('div', null, [h('h3', {className: 'font-semibold text-slate-900'}, 'Body Height'), h('p', {className: 'text-sm text-slate-500'}, 'Standing height measurement')])]),
+                        h('div', {className: 'flex items-center gap-4 mb-4'}, [h('input', {type:'number',step:0.1,min:50,max:250,value:displayHeight(heightVal),onChange:e=>{let val=parseFloat(e.target.value);if(s.heightUnit==='inches')val=val*2.54;updateVital('height',val);},className:'flex-1 px-4 py-3 border border-slate-200 rounded-lg text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent'}), h('span', {className: 'text-slate-500 font-medium text-lg'}, displayHeightUnit)]),
+                        h('div', {className: 'chart-container h-40'}, [h('canvas', {className: 'chart-canvas w-full h-full', 'data-chart-data': JSON.stringify(s.history.height || []), 'data-chart-color': '#3b82f6', 'data-chart-label': 'Height'})])
+                    ]),
+                    h('div', {className: 'bg-white rounded-xl border border-slate-200 shadow-sm p-6'}, [
+                        h('div', {className: 'flex items-center gap-3 mb-4'}, [h('div', {className: 'w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center'}, [Icon('scale', 'w-6 h-6 text-emerald-600')]), h('div', null, [h('h3', {className: 'font-semibold text-slate-900'}, 'Body Weight'), h('p', {className: 'text-sm text-slate-500'}, 'Current body weight')])]),
+                        h('div', {className: 'flex items-center gap-4 mb-4'}, [h('input', {type:'number',step:0.1,min:20,max:300,value:displayWeight(weightVal),onChange:e=>{let val=parseFloat(e.target.value);if(s.weightUnit==='lbs')val=val/2.20462;updateVital('weight',val);},className:'flex-1 px-4 py-3 border border-slate-200 rounded-lg text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent'}), h('span', {className: 'text-slate-500 font-medium text-lg'}, displayWeightUnit)]),
+                        h('div', {className: 'chart-container h-40'}, [h('canvas', {className: 'chart-canvas w-full h-full', 'data-chart-data': JSON.stringify(s.history.weight || []), 'data-chart-color': chartColors.weight, 'data-chart-label': 'Weight'})])
+                    ]),
+                    h('div', {className: 'bg-white rounded-xl border border-slate-200 shadow-sm p-6'}, [
+                        h('div', {className: 'flex items-center gap-3 mb-4'}, [h('div', {className: 'w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center'}, [Icon('circle', 'w-6 h-6 text-purple-600')]), h('div', null, [h('h3', {className: 'font-semibold text-slate-900'}, 'Head Circumference'), h('p', {className: 'text-sm text-slate-500'}, 'Maximum cranial circumference')])]),
+                        h('div', {className: 'flex items-center gap-4 mb-4'}, [h('input', {type:'number',step:0.1,min:30,max:70,value:s.vitals.headCircumference.value,onChange:e=>updateVital('headCircumference',parseFloat(e.target.value)),className:'flex-1 px-4 py-3 border border-slate-200 rounded-lg text-2xl font-mono text-center focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent'}), h('span', {className: 'text-slate-500 font-medium text-lg'}, 'cm')]),
+                        h('div', {className: 'text-sm text-slate-500'}, 'Reference: Adult average 55-58 cm')
+                    ])
+                ]),
+                h('div', {className: 'bg-white rounded-xl border border-slate-200 shadow-sm p-6'}, [
+                    h('div', {className: 'flex items-center justify-between mb-4'}, [
+                        h('div', {className: 'flex items-center gap-3'}, [h('div', {className: 'w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center'}, [Icon('chart-line', 'w-5 h-5 text-violet-600')]), h('div', null, [h('h3', {className: 'font-semibold text-slate-900'}, 'BMI Trend (7 Days)'), h('p', {className: 'text-sm text-slate-500'}, 'Body Mass Index progression')])]),
+                        h('div', {className: `px-3 py-1 rounded-full text-sm font-medium ${bmiCategory.bg} ${bmiCategory.color}`}, bmiCategory.label)
+                    ]),
+                    h('div', {className: 'chart-container h-64'}, [h('canvas', {className: 'chart-canvas w-full h-full', 'data-chart-data': JSON.stringify(s.history.bmi || []), 'data-chart-color': chartColors.bmi, 'data-chart-label': 'BMI'})]),
+                    h('div', {className: 'mt-4 grid grid-cols-3 gap-4 text-center'}, [
+                        h('div', {className: 'p-3 bg-slate-50 rounded-lg'}, [h('p', {className: 'text-2xl font-bold text-slate-900'}, bmiVal), h('p', {className: 'text-xs text-slate-500'}, 'Current BMI')]),
+                        h('div', {className: 'p-3 bg-slate-50 rounded-lg'}, [h('p', {className: 'text-2xl font-bold text-slate-900'}, `${Math.round((bmiVal - (s.history.bmi||[bmiVal])[0]) * 10) / 10 > 0 ? '+' : ''}${Math.round((bmiVal - (s.history.bmi||[bmiVal])[0]) * 10) / 10}`), h('p', {className: 'text-xs text-slate-500'}, '7-Day Change')]),
+                        h('div', {className: 'p-3 bg-slate-50 rounded-lg'}, [h('p', {className: 'text-2xl font-bold text-slate-900'}, '18.5 - 24.9'), h('p', {className: 'text-xs text-slate-500'}, 'Target Range')])
+                    ])
+                ])
+            ]);
+        }
+
+        // ===== TAB 4: QUICK ENTRY & ALERTS =====
+        function renderQuickEntryTab() {
+            const s = currentState;
+            const displayTemp = v => s.tempUnit === 'fahrenheit' ? Math.round((v * 9/5) + 32) : v;
+            const displayTempUnit = s.tempUnit === 'fahrenheit' ? '°F' : '°C';
+            const normalTempRange = s.tempUnit === 'fahrenheit' ? '97-99°F' : '36.1-37.2°C';
+            const displayWeight = v => s.weightUnit === 'lbs' ? Math.round(v * 2.20462 * 10) / 10 : v;
+            const displayWeightUnit = s.weightUnit === 'lbs' ? 'lbs' : 'kg';
+            const displayHeight = v => s.heightUnit === 'inches' ? Math.round(v / 2.54 * 10) / 10 : v;
+            const displayHeightUnit = s.heightUnit === 'inches' ? 'in' : 'cm';
+            
+            const params = [
+                {key:'respiratoryRate',label:'Respiratory Rate',unit:'breaths/min',icon:'wind',step:1,min:0,max:50},
+                {key:'heartRate',label:'Heart Rate',unit:'bpm',icon:'heart-pulse',step:1,min:30,max:200},
+                {key:'spo2',label:'SpO₂',unit:'%',icon:'droplet',step:1,min:70,max:100},
+                {key:'temperature',label:'Temperature',unit:displayTempUnit,icon:'thermometer',step:0.1,min:30,max:42},
+                {key:'systolicBP',label:'Systolic BP',unit:'mmHg',icon:'gauge',step:1,min:60,max:250},
+                {key:'diastolicBP',label:'Diastolic BP',unit:'mmHg',icon:'gauge',step:1,min:30,max:150},
+                {key:'height',label:'Height',unit:displayHeightUnit,icon:'ruler',step:0.1,min:50,max:250},
+                {key:'headCircumference',label:'Head Circumference',unit:'cm',icon:'circle',step:0.1,min:30,max:70},
+                {key:'weight',label:'Weight',unit:displayWeightUnit,icon:'scale',step:0.1,min:20,max:300},
+                {key:'bmi',label:'BMI',unit:'kg/m²',icon:'calculator',step:0.1,min:10,max:60}
+            ];
+            
+            // Generate alerts
+            const alerts = params.filter(p => p.key !== 'bmi').map(p => {
+                const v = s.vitals[p.key];
+                const status = getStatus(p.key, v.value);
+                if (status === 'normal') return null;
+                let displayVal = v.value, displayUnit = v.unit;
+                if (p.key === 'temperature') { displayVal = displayTemp(v.value); displayUnit = displayTempUnit; }
+                else if (p.key === 'weight') { displayVal = displayWeight(v.value); displayUnit = displayWeightUnit; }
+                else if (p.key === 'height') { displayVal = displayHeight(v.value); displayUnit = displayHeightUnit; }
+                return {key:p.key,label:p.label,value:displayVal,unit:displayUnit,status,normalRange:p.key==='temperature'?normalTempRange:v.normalRange};
+            }).filter(Boolean);
+            
+            return h('div', {className: 'space-y-6 animate-fade-in'}, [
+                h('div', {className: 'flex items-center justify-between'}, [
+                    h('div', null, [h('h2', {className: 'text-2xl font-bold text-slate-900'}, 'Quick Entry & Deterioration Alerts'), h('p', {className: 'text-sm text-slate-500'}, 'Log all parameters in one place • Active alerts panel')]),
+                    h('button', {className: 'px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center gap-2', onClick: () => alert('All vitals saved successfully!')}, [Icon('save', 'w-4 h-4'), 'Save All'])
+                ]),
+                h('div', {className: 'grid grid-cols-1 lg:grid-cols-3 gap-6'}, [
+                    h('div', {className: 'lg:col-span-2 space-y-6'}, [
+                        h('div', {className: 'bg-white rounded-xl border border-slate-200 shadow-sm p-6'}, [
+                            h('h3', {className: 'font-semibold text-slate-900 mb-4 flex items-center gap-2'}, [Icon('clipboard-pen', 'w-5 h-5 text-teal-600'), 'Vital Signs Entry Form']),
+                            h('div', {className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}, params.map(param => {
+                                const v = s.vitals[param.key];
+                                let displayValue = v.value;
+                                if (param.key === 'temperature') displayValue = displayTemp(v.value);
+                                else if (param.key === 'weight') displayValue = displayWeight(v.value);
+                                else if (param.key === 'height') displayValue = displayHeight(v.value);
+                                const status = getStatus(param.key, v.value);
+                                const isCalculated = param.key === 'bmi';
+                                const borderClass = status === 'normal' ? 'border-green-200 bg-green-50' : status === 'warning' ? 'border-amber-200 bg-amber-50' : 'border-red-200 bg-red-50';
+                                return h('div', {key: param.key, className: `relative p-4 rounded-lg border ${borderClass}`}, [
+                                    h('div', {className: 'absolute top-2 right-2'}, [h('span', {className: `px-2 py-0.5 rounded-full text-xs font-semibold ${badgeClass(status)}`}, status.charAt(0).toUpperCase() + status.slice(1))]),
+                                    h('label', {className: 'block text-xs font-medium text-slate-600 mb-1 flex items-center gap-1'}, [Icon(param.icon, 'w-3 h-3'), param.label]),
+                                    h('div', {className: 'flex items-center gap-2'}, [
+                                        h('input', {type:'number',step:param.step,min:param.min,max:param.max,value:displayValue,onChange:e=>handleQuickEntryChange(param.key,parseFloat(e.target.value)),disabled:isCalculated,className:`flex-1 px-3 py-2 border rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${isCalculated?'bg-slate-100 cursor-not-allowed':'bg-white'}`}),
+                                        h('span', {className: 'text-xs text-slate-500 font-medium w-16 text-right'}, param.unit)
+                                    ]),
+                                    h('p', {className: 'mt-1 text-xs text-slate-500'}, `Ref: ${param.key==='temperature'?normalTempRange:v.normalRange}`)
+                                ]);
+                            }))
+                        ])
+                    ]),
+                    h('div', {className: 'space-y-6'}, [
+                        h('div', {className: 'bg-white rounded-xl border border-slate-200 shadow-sm p-6 h-full'}, [
+                            h('div', {className: 'flex items-center justify-between mb-4'}, [
+                                h('h3', {className: 'font-semibold text-slate-900 flex items-center gap-2'}, [Icon('alert-triangle', 'w-5 h-5 text-amber-600'), 'Active Alerts']),
+                                h('span', {className: `px-2 py-1 rounded-full text-xs font-semibold ${alerts.length>0?'badge-critical':'badge-normal'}`}, alerts.length>0?`${alerts.length} Active`:'All Clear')
+                            ]),
+                            alerts.length === 0 ? h('div', {className: 'text-center py-8'}, [h('div', {className: 'w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center'}, [Icon('check-circle-2', 'w-8 h-8 text-green-600')]), h('p', {className: 'text-slate-600 mb-1'}, 'No Active Alerts'), h('p', {className: 'text-sm text-slate-500'}, 'All parameters within normal ranges')]) :
+                            h('div', {className: 'space-y-3 max-h-96 overflow-y-auto'}, alerts.map(alert =>
+                                h('div', {key: alert.key, className: `p-4 rounded-lg border-l-4 ${alert.status==='warning'?'border-amber-500 bg-amber-50':'border-red-500 bg-red-50'}`}, [
+                                    h('div', {className: 'flex items-start justify-between gap-2'}, [
+                                        h('div', {className: 'flex-1'}, [
+                                            h('p', {className: 'font-medium text-slate-900 flex items-center gap-1'}, [Icon(alert.status==='critical'?'alert-circle':'alert-triangle', `w-4 h-4 ${alert.status==='critical'?'text-red-500':'text-amber-500'}`), alert.label]),
+                                            h('p', {className: 'text-sm text-slate-600 mt-1'}, `Current: ${alert.value}${alert.unit} • Normal: ${alert.normalRange}`)
+                                        ])
+                                    ]),
+                                    h('div', {className: 'mt-2 flex items-center gap-2'}, [
+                                        h('span', {className: `px-2 py-1 rounded-full text-xs font-semibold ${alert.status==='warning'?'badge-warning':'badge-critical'}`}, alert.status.charAt(0).toUpperCase() + alert.status.slice(1)),
+                                        h('span', {className: 'text-xs text-slate-500'}, 'Requires attention')
+                                    ])
+                                ])
+                            ))
+                        ]),
+                        h('div', {className: 'bg-white rounded-xl border border-slate-200 shadow-sm p-6'}, [
+                            h('h3', {className: 'font-semibold text-slate-900 mb-4 flex items-center gap-2'}, [Icon('zap', 'w-5 h-5 text-teal-600'), 'Quick Actions']),
+                            h('div', {className: 'space-y-2'}, [
+                                ['phone','Contact Care Team','Escalate to healthcare provider','teal'],
+                                ['message-square','Send Secure Message','Message your care coordinator','blue'],
+                                ['calendar','Schedule Follow-up','Book appointment with physician','amber'],
+                                ['download','Export Report','Download PDF summary for visit','green']
+                            ].map(([icon,title,desc,color]) => h('button', {className: 'w-full px-4 py-3 text-left border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-teal-300 transition-colors flex items-center gap-3'}, [
+                                h('div', {className: `w-10 h-10 rounded-lg bg-${color}-100 flex items-center justify-center`}, [Icon(icon, `w-5 h-5 text-${color}-600`)]),
+                                h('div', null, [h('p', {className: 'font-medium text-slate-900'}, title), h('p', {className: 'text-sm text-slate-500'}, desc)])
+                            ]))
+                        ])
+                    ])
+                ])
+            ]);
+        }
+
+        // ===== VITAL UPDATE HANDLERS =====
+        function updateVital(key, value) {
+            const s = currentState;
+            const newVitals = {...s.vitals, [key]: {...s.vitals[key], value}};
+            const newHistory = {...s.history};
+            const newData = [...(newHistory[key] || [])];
+            newData.shift(); newData.push(value);
+            newHistory[key] = newData;
+            
+            // Auto-calculate BMI
+            if (key === 'height' || key === 'weight') {
+                const h = key === 'height' ? value : s.vitals.height.value;
+                const w = key === 'weight' ? value : s.vitals.weight.value;
+                const newBMI = Math.round((w / ((h/100)*(h/100))) * 10) / 10;
+                newVitals.bmi = {...s.vitals.bmi, value: newBMI};
+                const bmiData = [...newHistory.bmi]; bmiData.shift(); bmiData.push(newBMI); newHistory.bmi = bmiData;
+            }
+            
+            setState({vitals: newVitals, history: newHistory, quickEntryData: {...s.quickEntryData, [key]: {...s.quickEntryData[key], value}}});
+        }
+
+        function handleQuickEntryChange(key, value) {
+            const s = currentState;
+            let val = value;
+            if (key === 'temperature' && s.tempUnit === 'fahrenheit') val = (value - 32) * 5/9;
+            else if (key === 'weight' && s.weightUnit === 'lbs') val = value / 2.20462;
+            else if (key === 'height' && s.heightUnit === 'inches') val = value * 2.54;
+            updateVital(key, val);
+        }
+
+        // ===== INITIALIZE =====
+        render();
+    </script>
+</body>
+</html>

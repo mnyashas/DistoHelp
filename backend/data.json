@@ -1,0 +1,466 @@
+{
+  "users": [
+    {
+      "id": "U-1",
+      "name": "Dr. Meera Nair",
+      "role": "Clinician",
+      "aadhaar": "999941057058",
+      "mobile": "9876543210",
+      "otp": null
+    },
+    {
+      "id": "U-2",
+      "name": "Nurse Arjun Rao",
+      "role": "Nurse",
+      "aadhaar": "111122223333",
+      "mobile": "9123456780",
+      "otp": null
+    }
+  ],
+  "patients": [
+    {
+      "id": "PT-1001",
+      "fullName": "Ananya Sharma",
+      "age": 34,
+      "gender": "Female",
+      "phone": "9812345670",
+      "address": "12 Rose Villa, Bandra West, Mumbai",
+      "conditions": [
+        "Hypertension"
+      ],
+      "medicalHistory": "Managed hypertension since 2020. No known drug allergies.",
+      "registeredOn": "2026-11-11T12:22:17.417Z",
+      "records": [
+        {
+          "id": "5759c33f-1d28-4dea-8f17-bf29268c1edc",
+          "measuredAt": "2026-11-12T11:52:17.417Z",
+          "source": "manual",
+          "vitals": {
+            "respiratoryRate": 16,
+            "heartRate": 82,
+            "spo2": 98,
+            "temperature": 36.8,
+            "height": 162,
+            "weight": 58,
+            "systolic": 128,
+            "diastolic": 82,
+            "onOxygen": false,
+            "consciousness": "A",
+            "bmi": 22.1
+          },
+          "news2": {
+            "total": 0,
+            "complete": true,
+            "escalation": false,
+            "items": [
+              {
+                "key": "respiratoryRate",
+                "label": "Respiratory Rate",
+                "unit": "breaths/min",
+                "value": 16,
+                "score": 0,
+                "explanation": "12-20 normal; <=8 or >=25 scores 3"
+              },
+              {
+                "key": "spo2",
+                "label": "Oxygen Saturation",
+                "unit": "%",
+                "value": 98,
+                "score": 0,
+                "explanation": ">=96% normal; <=91% scores 3"
+              },
+              {
+                "key": "systolic",
+                "label": "Systolic BP",
+                "unit": "mmHg",
+                "value": 128,
+                "score": 0,
+                "explanation": "111-219 normal; <=90 or >=220 scores 3"
+              },
+              {
+                "key": "heartRate",
+                "label": "Heart Rate",
+                "unit": "bpm",
+                "value": 82,
+                "score": 0,
+                "explanation": "51-90 normal; <=40 or >=131 scores 3"
+              },
+              {
+                "key": "temperature",
+                "label": "Temperature",
+                "unit": "°C",
+                "value": 36.8,
+                "score": 0,
+                "explanation": "36.1-38.0 normal; <=35.0 scores 3"
+              },
+              {
+                "key": "onOxygen",
+                "label": "Supplemental Oxygen",
+                "unit": "",
+                "value": "No",
+                "score": 0,
+                "explanation": "Supplemental oxygen scores 2"
+              },
+              {
+                "key": "consciousness",
+                "label": "Consciousness",
+                "unit": "",
+                "value": "Alert",
+                "score": 0,
+                "explanation": "Alert scores 0; new confusion/CVPU scores 3"
+              }
+            ],
+            "risk": {
+              "level": "low",
+              "label": "Low Risk",
+              "clinical": "Ward-based response; continue routine monitoring"
+            }
+          }
+        }
+      ],
+      "enquiries": [
+        {
+          "id": "d592038e-48d9-4cab-969e-e96f2faab4f6",
+          "patientId": "PT-1001",
+          "patientName": "Ananya Sharma",
+          "createdAt": "2026-11-12T11:22:17.417Z",
+          "mainComplaint": "Recurring headaches for the past three days",
+          "symptoms": "Dull ache on the left side, mild nausea in the morning",
+          "duration": "3 days",
+          "painDescription": "Throbbing pain, 5/10",
+          "existingConditions": "Hypertension",
+          "currentMedications": "Amlodipine 5mg once daily",
+          "allergies": "Penicillin",
+          "additionalObservations": "Blood pressure stable at last check",
+          "staffRemarks": "Advised hydration and follow-up in 48 hours"
+        }
+      ]
+    },
+    {
+      "id": "PT-1002",
+      "fullName": "Rahul Verma",
+      "age": 58,
+      "gender": "Male",
+      "phone": "9823456781",
+      "address": "44 Lake Road, Kolkata",
+      "conditions": [
+        "Type 2 Diabetes",
+        "COPD"
+      ],
+      "medicalHistory": "COPD exacerbation in 2023. On inhalers.",
+      "registeredOn": "2026-11-10T12:22:17.417Z",
+      "records": [
+        {
+          "id": "261802cc-6b79-4aa9-a71f-1267edf4b6ea",
+          "measuredAt": "2026-11-12T11:47:17.417Z",
+          "source": "manual",
+          "vitals": {
+            "respiratoryRate": 24,
+            "heartRate": 104,
+            "spo2": 92,
+            "temperature": 37.9,
+            "height": 172,
+            "weight": 84,
+            "systolic": 148,
+            "diastolic": 94,
+            "onOxygen": true,
+            "consciousness": "A",
+            "bmi": 28.4
+          },
+          "news2": {
+            "total": 7,
+            "complete": true,
+            "escalation": false,
+            "items": [
+              {
+                "key": "respiratoryRate",
+                "label": "Respiratory Rate",
+                "unit": "breaths/min",
+                "value": 24,
+                "score": 2,
+                "explanation": "12-20 normal; <=8 or >=25 scores 3"
+              },
+              {
+                "key": "spo2",
+                "label": "Oxygen Saturation",
+                "unit": "%",
+                "value": 92,
+                "score": 2,
+                "explanation": ">=96% normal; <=91% scores 3"
+              },
+              {
+                "key": "systolic",
+                "label": "Systolic BP",
+                "unit": "mmHg",
+                "value": 148,
+                "score": 0,
+                "explanation": "111-219 normal; <=90 or >=220 scores 3"
+              },
+              {
+                "key": "heartRate",
+                "label": "Heart Rate",
+                "unit": "bpm",
+                "value": 104,
+                "score": 1,
+                "explanation": "51-90 normal; <=40 or >=131 scores 3"
+              },
+              {
+                "key": "temperature",
+                "label": "Temperature",
+                "unit": "°C",
+                "value": 37.9,
+                "score": 0,
+                "explanation": "36.1-38.0 normal; <=35.0 scores 3"
+              },
+              {
+                "key": "onOxygen",
+                "label": "Supplemental Oxygen",
+                "unit": "",
+                "value": "Yes",
+                "score": 2,
+                "explanation": "Supplemental oxygen scores 2"
+              },
+              {
+                "key": "consciousness",
+                "label": "Consciousness",
+                "unit": "",
+                "value": "Alert",
+                "score": 0,
+                "explanation": "Alert scores 0; new confusion/CVPU scores 3"
+              }
+            ],
+            "risk": {
+              "level": "high",
+              "label": "High Risk",
+              "clinical": "Emergency response; immediate critical-care review"
+            }
+          }
+        }
+      ],
+      "enquiries": []
+    },
+    {
+      "id": "PT-1003",
+      "fullName": "Fatima Khan",
+      "age": 71,
+      "gender": "Female",
+      "phone": "9834567892",
+      "address": "7 Green Park, New Delhi",
+      "conditions": [
+        "Heart failure",
+        "Atrial fibrillation"
+      ],
+      "medicalHistory": "Admitted for decompensated heart failure in 2024.",
+      "registeredOn": "2026-11-09T12:22:17.417Z",
+      "records": [
+        {
+          "id": "200ddea2-ab70-425e-9d51-2f19389d5f6c",
+          "measuredAt": "2026-11-12T11:42:17.417Z",
+          "source": "manual",
+          "vitals": {
+            "respiratoryRate": 27,
+            "heartRate": 132,
+            "spo2": 90,
+            "temperature": 38.4,
+            "height": 155,
+            "weight": 61,
+            "systolic": 88,
+            "diastolic": 54,
+            "onOxygen": true,
+            "consciousness": "CVPU",
+            "bmi": 25.4
+          },
+          "news2": {
+            "total": 18,
+            "complete": true,
+            "escalation": true,
+            "items": [
+              {
+                "key": "respiratoryRate",
+                "label": "Respiratory Rate",
+                "unit": "breaths/min",
+                "value": 27,
+                "score": 3,
+                "explanation": "12-20 normal; <=8 or >=25 scores 3"
+              },
+              {
+                "key": "spo2",
+                "label": "Oxygen Saturation",
+                "unit": "%",
+                "value": 90,
+                "score": 3,
+                "explanation": ">=96% normal; <=91% scores 3"
+              },
+              {
+                "key": "systolic",
+                "label": "Systolic BP",
+                "unit": "mmHg",
+                "value": 88,
+                "score": 3,
+                "explanation": "111-219 normal; <=90 or >=220 scores 3"
+              },
+              {
+                "key": "heartRate",
+                "label": "Heart Rate",
+                "unit": "bpm",
+                "value": 132,
+                "score": 3,
+                "explanation": "51-90 normal; <=40 or >=131 scores 3"
+              },
+              {
+                "key": "temperature",
+                "label": "Temperature",
+                "unit": "°C",
+                "value": 38.4,
+                "score": 1,
+                "explanation": "36.1-38.0 normal; <=35.0 scores 3"
+              },
+              {
+                "key": "onOxygen",
+                "label": "Supplemental Oxygen",
+                "unit": "",
+                "value": "Yes",
+                "score": 2,
+                "explanation": "Supplemental oxygen scores 2"
+              },
+              {
+                "key": "consciousness",
+                "label": "Consciousness",
+                "unit": "",
+                "value": "CVPU",
+                "score": 3,
+                "explanation": "Alert scores 0; new confusion/CVPU scores 3"
+              }
+            ],
+            "risk": {
+              "level": "high",
+              "label": "High Risk",
+              "clinical": "Emergency response; immediate critical-care review"
+            }
+          }
+        }
+      ],
+      "enquiries": []
+    },
+    {
+      "id": "PT-1004",
+      "fullName": "Vikram Singh",
+      "age": 45,
+      "gender": "Male",
+      "phone": "9845678903",
+      "address": "89 Hill View, Jaipur",
+      "conditions": [
+        "Asthma"
+      ],
+      "medicalHistory": "Seasonal asthma. Uses reliever inhaler as needed.",
+      "registeredOn": "2026-11-08T12:22:17.417Z",
+      "records": [
+        {
+          "id": "aa8a4b56-87fb-4635-862b-23abf9137ea9",
+          "measuredAt": "2026-11-12T11:37:17.417Z",
+          "source": "manual",
+          "vitals": {
+            "respiratoryRate": 19,
+            "heartRate": 92,
+            "spo2": 95,
+            "temperature": 37.2,
+            "height": 178,
+            "weight": 76,
+            "systolic": 132,
+            "diastolic": 86,
+            "onOxygen": false,
+            "consciousness": "A",
+            "bmi": 24
+          },
+          "news2": {
+            "total": 2,
+            "complete": true,
+            "escalation": false,
+            "items": [
+              {
+                "key": "respiratoryRate",
+                "label": "Respiratory Rate",
+                "unit": "breaths/min",
+                "value": 19,
+                "score": 0,
+                "explanation": "12-20 normal; <=8 or >=25 scores 3"
+              },
+              {
+                "key": "spo2",
+                "label": "Oxygen Saturation",
+                "unit": "%",
+                "value": 95,
+                "score": 1,
+                "explanation": ">=96% normal; <=91% scores 3"
+              },
+              {
+                "key": "systolic",
+                "label": "Systolic BP",
+                "unit": "mmHg",
+                "value": 132,
+                "score": 0,
+                "explanation": "111-219 normal; <=90 or >=220 scores 3"
+              },
+              {
+                "key": "heartRate",
+                "label": "Heart Rate",
+                "unit": "bpm",
+                "value": 92,
+                "score": 1,
+                "explanation": "51-90 normal; <=40 or >=131 scores 3"
+              },
+              {
+                "key": "temperature",
+                "label": "Temperature",
+                "unit": "°C",
+                "value": 37.2,
+                "score": 0,
+                "explanation": "36.1-38.0 normal; <=35.0 scores 3"
+              },
+              {
+                "key": "onOxygen",
+                "label": "Supplemental Oxygen",
+                "unit": "",
+                "value": "No",
+                "score": 0,
+                "explanation": "Supplemental oxygen scores 2"
+              },
+              {
+                "key": "consciousness",
+                "label": "Consciousness",
+                "unit": "",
+                "value": "Alert",
+                "score": 0,
+                "explanation": "Alert scores 0; new confusion/CVPU scores 3"
+              }
+            ],
+            "risk": {
+              "level": "low",
+              "label": "Low Risk",
+              "clinical": "Ward-based response; continue routine monitoring"
+            }
+          }
+        }
+      ],
+      "enquiries": []
+    }
+  ],
+  "enquiries": [
+    {
+      "id": "d592038e-48d9-4cab-969e-e96f2faab4f6",
+      "patientId": "PT-1001",
+      "patientName": "Ananya Sharma",
+      "createdAt": "2026-11-12T11:22:17.417Z",
+      "mainComplaint": "Recurring headaches for the past three days",
+      "symptoms": "Dull ache on the left side, mild nausea in the morning",
+      "duration": "3 days",
+      "painDescription": "Throbbing pain, 5/10",
+      "existingConditions": "Hypertension",
+      "currentMedications": "Amlodipine 5mg once daily",
+      "allergies": "Penicillin",
+      "additionalObservations": "Blood pressure stable at last check",
+      "staffRemarks": "Advised hydration and follow-up in 48 hours"
+    }
+  ],
+  "counter": 1004
+}
