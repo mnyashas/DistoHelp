@@ -135,3 +135,10 @@ Measured on the bundled deterministic replay (1-minute ticks, 24 h, 5 patients, 
 **Data attribution**: BIDMC PPG and Respiration dataset (53 records), open access, PhysioNet —
 https://physionet.org/content/bidmc/1.0.0/ (Goldberger et al., *PhysioBank*). Committed for offline
 demo use. Synthea-generated/curated synthetic discharge profiles; no real patient data anywhere.
+
+## Contributors
+
+- [@mnyashas](https://github.com/mnyashas) - project owner
+- [@abzalsoudagar](https://github.com/abzalsoudagar) - contributor
+- [@mahammedali1044](https://github.com/mahammedali1044) - contributor
+- [@nandeeshnandeesh853-source](https://github.com/nandeeshnandeesh853-source) - contributor
